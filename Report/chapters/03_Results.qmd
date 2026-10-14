@@ -2,24 +2,26 @@
 
 Out of 1,400 EM runs, 65 runs did not converge (maximum gradient was greater than 1e-4). The models with logistic selectivity under poor recruitment conditions had the lowest convergence rates, ranging from 82-85% convergence. Out of the scenarios with dome-shaped selectivity, the NSE scenarios were the only ones that had iterations that did not converge. Overall, model convergence for all sampling scenarios was high. 
 
-## Normal Recruitment Conditions 
+## Effort Scenarios 
 
-Under normal recruitment, all sampling strategies exhibited similar bias and precision for terminal-year SSB (@tbl-re-term-yr). Relative error remained low, ranging from 2% ($SD = 0.154$) to 3.6% ($SD = 0.136$). Notably, the NSE scenario—relying solely on commercial CPUE and length data—performed nearly as well as the highest-effort scenarios. This high performance in the NSE scenario likely stems from the small CV associated with the fishery CPUE index that the survey replaces and robust effective sample sizes for fishery length data. For scenarios with surveys, precision for SSB over the final 25 years scaled with sampling intensity (@fig-mre). For instance, the 95% error interval of SSB for the XLSE scenario was wider (–22% to 38%) than that of the HSE (–12% to 28%), which could have significant influence on reference point estimation. 
+Under normal recruitment, all effort scenarios exhibited similar bias and precision for terminal-year SSB (@tbl-re-term-yr). Relative error remained low, ranging from 2% (SD = 0.154) to 3.6% (SD = 0.136). Notably, the NSE scenario—relying solely on commercial CPUE and length data—performed nearly as well as the highest-effort scenarios. This high performance in the NSE scenario likely stems from the small CV associated with the fishery CPUE index that the survey replaces and robust effective sample sizes for fishery length data. For scenarios with surveys, precision for SSB over the final 25 years scaled with sampling intensity (@fig-mre). For instance, the 95% error interval of SSB for the XLSE scenario was wider (–22% to 38%) than that of the HSE (–12% to 28%), which could have significant influence on reference point estimation. 
 
+Under poor recruitment conditions, most sampling scenarios exhibited comparable bias and precision for SSB (@fig-mre) and $F$ (@fig-Fmre). However, overall model performance degraded significantly compared to normal recruitment conditions. The NSE-hyperstable scenario was an expected outlier, performing substantially worse than all other configurations with an SSB terminal-year MRE of 38.6% ($SD = 0.294$) (@tbl-re-term-yr). For all other scenarios, SSB MRE was more moderate, ranging from 11.9% ($SD = 0.136$) in HSE to 14.4% ($SD = 0.192$) in XLSE.
 
 ```{r}
 ts_re <- read.csv("../ts_re.csv")
 library(tidyverse)
 library(gt)
+source("../table_style.R")
 ```
 
 
 ```{r}
 #| label: tbl-re-term-yr
 #| message: false
-#| tbl-cap: "Median relative error and standard deviation of relative error in the terminal year for spawning biomass, recruitment, and fishing mortality by scenario."
+#| tbl-cap: "Median relative error and standard deviation of relative error in the terminal year for spawning biomass,  fishing mortality, and recruitment by scenario."
 ts_re %>%
-filter(year <= 2048 & !str_detect(scenario, "IRFSelex_SQ|qprior" )) %>% 
+filter(year <= 2048 & !str_detect(scenario, "Selex" )) %>% 
 group_by(scenario, year) %>%
 summarise(
   SpawnMed = quantile((SpawnBio_re), 0.5, na.rm = TRUE),
@@ -37,43 +39,25 @@ mutate(
     scen = case_when(
       scen == "FRSonly" ~ "NSE",
       scen == "HRF"     ~ "HSE",
-      scen == "HRFSelex"     ~ "HSE-Selectivity",
       scen == "IRF"     ~ "ISE",
-      scen == "IRFSelex"     ~ "ISE-Selectivity", 
       scen == "LRF"     ~ "LSE",
-      scen == "LRFSelex"     ~ "LSE-Selectivity",
       scen == "XLRF"    ~ "XLSE"
     ),
     `Spawning Biomass`  = sprintf("%.3f (%.3f)", SpawnMed, SpawnSD),
     `Recruitment`       = sprintf("%.3f (%.3f)", RecruitMed, RecruitSD),
     `Fishing Mortality` = sprintf("%.3f (%.3f)", FMed, FSD),
     scen = factor(scen, 
-    levels = c("NSE", "XLSE", "LSE", "LSE-Selectivity", "ISE", "ISE-Selectivity", "HSE", "HSE-Selectivity"))
+    levels = c("NSE", "XLSE", "LSE", "ISE", "HSE"))
   ) %>%
   arrange(Rec_scenario, scen) %>%
   ungroup() %>%
-  select(scen, Rec_scenario, `Spawning Biomass`, `Fishing Mortality`, `Recruitment`) %>%
-  gt(groupname_col = "Rec_scenario") %>%
-  cols_label(
-    scen = "Scenario"
-  ) %>%
-  # tab_spanner(
-  #   label = "Median RE (SD)",
-  #   columns = c(`Spawning Biomass`, `Recruitment`, `Fishing Mortality`)
-  # ) %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_row_groups()
-  ) %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_column_labels()
-  ) %>%
-  tab_options(
-    row_group.background.color = "#f0f0f0",
-    table.border.top.style = "solid",
-    table.border.bottom.style = "solid"
-  )
+  select(scen, Rec_scenario, `Spawning Biomass`, `Fishing Mortality`, `Recruitment`) -> table_re_term_yr
+
+format_pdf_table(
+  table_re_term_yr %>% select(-Rec_scenario),
+  column_names = c("Scenario", "Spawning Biomass", "Fishing Mortality", "Recruitment"),
+  group_rows = c("Normal Recruitment" = 5, "Poor Recruitment" = 5)
+)
 ```
 
 ```{r}
@@ -104,7 +88,7 @@ mutate(
   scen == "XLRF"    ~ "XLSE"
 ),
   scen = factor(scen, 
-    levels = c("NSE", "XLSE", "LSE", "LSE-Selectivity", "ISE", "ISE-Selectivity", "HSE", "HSE-Selectivity"))) %>%
+    levels = c("NSE", "XLSE", "LSE", "ISE", "HSE"))) %>%
 filter(year > 2023) %>% 
 ggplot() +
 geom_hline(yintercept = 0, color = "grey60") +
@@ -126,48 +110,9 @@ stockplotr::theme_noaa() +
 ```
 
 
-```{r}
+Under normal recruitment, fishing mortality exhibited similar bias and precision across all effort scenarios in the terminal year, though estimates were consistently lower than true values (@tbl-re-term-yr). Terminal-year $F$ MRE ranged from –2.4% ($SD = 0.151$) to –3.3% ($SD = 0.103$). Notably, while the XLSE scenario showed a slightly lower bias, it also demonstrated the lowest precision. Conversely, the HSE scenario, despite having slightly higher bias, offered superior precision. The marginal 1% increase in bias in the HSE is a negligible trade-off for the gain in precision and may simply be a simulation artifact. Consistent with SSB patterns precision for $F$ over the final 25 years declined as sampling effort decreased for scenarios with surveys (@fig-Fmre). The 95% error interval for the XLSE scenario [–23%, 31%] was wider than the more constrained [–18%, 18%] range of the HSE.
 
-#| label: fig-selectivity-spawnbio-re
-#| fig-cap: "Timeseries of median (solid line) and 95% quantile (band) relative error of spawing stock biomass for the high (HSE), intermediate (ISE), and low (LSE) scenarios with dome-shaped selectivity (red line) and logistic selectivity (blue line)."
-
-# ts_re %>%
-# filter(
-#   year <= 2048 & 
-#   str_detect(scenario, "poorrec" ) &
-#   !str_detect(scenario, "qprior|FRSonly|XLRF")) %>%
-# group_by(scenario, year) %>% 
-# summarise(med_re = quantile((SpawnBio_re), 0.5, na.rm = TRUE),
-# uci = quantile((SpawnBio_re), .975, na.rm = TRUE),
-# lci = quantile((SpawnBio_re), .05, na.rm = TRUE)) %>% 
-#   extract(
-#     scenario,
-#     into = c("scen", "Rec_scenario", "years", "Yrs"),
-#     regex = "^([^_]+)_([^_]+)_(\\d+)_(.+)$",
-#     remove = FALSE
-#   ) %>%
-#   separate(scen, into = c("Effort", "Selectivity"),
-#   sep = "Se") %>%
-#     mutate(
-#       Selectivity = ifelse(is.na(Selectivity), "Dome", "Logistic"),
-#       Effort = factor(Effort, levels = c("HRF", "IRF", "LRF"),
-#         labels = c("HSE", "ISE", "LSE")),
-#       Selectivity = factor(Selectivity, 
-#       levels = c("Dome", "Logistic"))) %>% 
-#   ggplot() +
-#   geom_hline(yintercept = 0, color = "grey60") +
-# geom_ribbon(aes(x = year, ymin = lci, ymax = uci, fill = Selectivity, color = Selectivity), 
-# alpha = .25, linewidth = .5) + 
-# geom_line(aes(x = year, y = med_re, color = Selectivity, group = scenario), linewidth = 1.2) +
-# facet_wrap(~ Effort, nrow = 3) +
-#   stockplotr::theme_noaa() + 
-#   scale_fill_brewer(palette = "Set1") +
-#   scale_color_brewer(palette = "Set1") +
-#   labs(x = "Year", y = "SSB Relative Error")
-
-```
-
-Fishing mortality exhibited similar bias and precision across all scenarios in the terminal year, though estimates were consistently lower than true values (@tbl-re-term-yr). Terminal-year $F$ MRE ranged from –2.4% ($SD = 0.151$) to –3.3% ($SD = 0.103$). Notably, while the XLSE scenario showed a slightly lower bias, it also demonstrated the lowest precision. Conversely, the HSE scenario—despite having slightly higher bias—offered superior precision. The marginal 1% increase in bias in the HSE is a negligible trade-off for the gain in precision and may simply be a simulation artifact. Consistent with SSB patterns precision for $F$ over the final 25 years declined as sampling effort decreased for scenarios with surveys (@fig-Fmre). The 95% error interval for the XLSE scenario [–23%, 31%] was wider than the more constrained [–18%, 18%] range of the HSE.
+Under poor recruitment conditions, estimates of $F$ were less accurate than under recruitment (@fig-Fmre). MRE for $F$ ranged from 1.2% ($SD = 0.206$) in NSE-hyperstable to –12.2% ($SD = 0.162$) in the XLSE (@tbl-re-term-yr). Interestingly, while the NSE-hyperstable scenario yielded the lowest bias for $F$ over the final decade, it was characterized by much higher variability throughout the projection period ($SD = 0.206$), making the estimates less reliable for consistent management. 
  
 
 ```{r}
@@ -196,7 +141,7 @@ mutate(
   scen == "XLRF"    ~ "XLSE"
 ),
   scen = factor(scen, 
-    levels = c("NSE", "XLSE", "LSE", "LSE-Selectivity", "ISE", "ISE-Selectivity", "HSE", "HSE-Selectivity"))) %>%
+    levels = c("NSE", "XLSE", "LSE", "ISE", "HSE"))) %>%
 ggplot() +
 geom_hline(yintercept = 0, color = "grey60") +
 geom_ribbon(aes(x = year, ymin = lci, ymax = uci, fill = scen, color = scen), 
@@ -217,7 +162,9 @@ stockplotr::theme_noaa() +
 ```
 
 
-Over the final 25-year period, the HSE and ISE scenarios provided the most accurate estimates of true age-0 recruitment, while the XLSE scenario performed the poorest—particularly in the most recent years (@fig-recmre). Although the XLSE recorded the lowest MRE in the terminal year (@tbl-re-term-yr), terminal-year recruitment estimates are inherently unreliable due to limited data observations. A persistent overestimation of age-0 recruitment across all models likely explains the positive bias observed in SSB during the final years of the simulation. Generally, the variability in RE for recruitment was substantially higher than for SSB or $F$ (@tbl-re-term-yr), indicating that the estimation model struggles to precisely capture recruitment dynamics regardless of sampling effort.
+Over the final 25-year period, under normal recruitment conditions, the HSE and ISE scenarios provided the most accurate estimates of true age-0 recruitment, while the XLSE scenario performed the poorest—particularly in the most recent years (@fig-recmre). Although the XLSE recorded the lowest MRE in the terminal year (@tbl-re-term-yr), terminal-year recruitment estimates are inherently unreliable due to limited data observations. A persistent overestimation of age-0 recruitment across all models likely explains the positive bias observed in SSB during the final years of the simulation. Generally, the variability in RE for recruitment was substantially higher than for SSB or $F$ (@tbl-re-term-yr), indicating that the estimation model struggles to precisely capture recruitment dynamics regardless of sampling effort.
+
+Under poor recruitment conditions, age-0 recruitment was estimated with similar accuracy in all scenarios except the NSE-hyperstable (@fig-recmre). Counter-intuitively, terminal-year recruitment estimates were less biased under poor recruitment than under normal recruitment conditions (@tbl-re-term-yr). Furthermore, precision was notably higher across all scenarios—including the NSE-hyperstable—throughout the entire projection period (@fig-recmre).
 
 ```{r}
 #| label: fig-recmre
@@ -245,7 +192,7 @@ mutate(
   scen == "XLRF"    ~ "XLSE"
 ),
   scen = factor(scen, 
-    levels = c("NSE", "XLSE", "LSE", "LSE-Selectivity", "ISE", "ISE-Selectivity", "HSE", "HSE-Selectivity"))) %>%
+    levels = c("NSE", "XLSE", "LSE", "ISE", "HSE"))) %>%
 ggplot() +
 geom_hline(yintercept = 0, color = "grey60") +
 geom_ribbon(aes(x = year, ymin = lci, ymax = uci, fill = scen, color = scen), 
@@ -266,15 +213,17 @@ stockplotr::theme_noaa() +
 ```
 
 
-Under normal recruitment, all models showed similar bias when estimating stock status ($SSB/SSB_{MSST}$ and $F/F_{MSY}$), but precision degraded noticeably as sampling effort decreased (@fig-refpoints). The NSE scenario had precision levels comparable to the HSE, given the low CV associated with the fishery CPUE index. Median relative error for $SSB/SSB_{MSST}$ ranged from 2.3% to 4% across scenarios (@tbl-refpoints), with precision (standard deviation) varying from 0.100 (NSE) to 0.153 (XLSE). The 4% precision gap between the XLSE and HSE scenarios represents a meaningful difference that could influence management decisions. Similarly, the MRE for $F/F_{MSY}$ was tightly clustered between 2.8% and 3.1% for all scenarios (@tbl-refpoints). However, the standard deviation again revealed a 0.04 discrepancy between the HSE and XLSE. This suggests that while all sampling intensities yield similar point estimates for terminal-year $F/F_{MSY}$, reduced effort compromises precision and increases the risk of significant under- or overestimation. 
+Under normal recruitment, all models showed similar bias when estimating stock status ($SSB/SSB_{MSST}$ and $F/F_{MSY}$), but precision degraded noticeably as sampling effort decreased (@fig-refpoints). The NSE scenario had precision levels comparable to the HSE, given the low CV associated with the fishery CPUE index. Median relative error for $SSB/SSB_{MSST}$ ranged from 2.3% to 4% across scenarios (@tbl-refpoints), with precision (standard deviation) varying from 0.100 (NSE) to 0.153 (XLSE). The 4% precision gap between the XLSE and HSE scenarios represents a meaningful difference that could influence management decisions. Similarly, the MRE for $F/F_{MSY}$ was tightly clustered between 2.8% and 3.1% for all scenarios (@tbl-refpoints). However, the standard deviation again revealed a 0.04 discrepancy between the HSE and XLSE. This suggests that while all sampling intensities yield similar point estimates for terminal-year $F/F_{MSY}$, reduced effort compromises precision and increases the risk of significant under- or overestimation.  
 
-Lastly, the reliability of key reference point estimates remained consistent across all scenarios under normal recruitment conditions (@tbl-prob-wrong). The likelihood of incorrectly estimating $SSB/SSB_{MSST}$ (defined as a deviation $>10\%$) was under 50% for nearly all scenarios, ranging from 51% in the LSE to 30% in the NSE. Similarly, the probability of an incorrect $F/F_{MSY}$ estimate was below 50% for all scenarios, reaching a minimum of 29% in the NSE. These results indicate that under normal recruitment, current sampling efforts generally produce estimates within a 10% margin of the true value the majority of the time.
+The HSE scenario demonstrated the strongest performance for estimating terminal-year $SSB/SSB_{MSST}$ and $F/F_{MSY}$ (@fig-refpoints) under poor recruitment conditions. This scenario produced the lowest variability, with MREs of 12.8% for $SSB/SSB_{MSST}$ and –11.5% for $F/F_{MSY}$ (@tbl-refpoints). Conversely, the NSE scenario performed the poorest for $SSB/SSB_{MSST}$, with an MRE of 38.9% ($SD = 0.293$). Critically, the true terminal-year stock status was not recovered in the majority of simulation runs for any scenario, as interquartile ranges failed to include zero. This suggests that under poor recruitment, all tested models tend to provide an overly optimistic view of stock status. The only exception was $F/F_{MSY}$ under the NSE-hyperstable scenario, where the MRE was near zero; however, this accuracy comes with a trade-off of extreme uncertainty. The wide range of relative error in the NSE-hyperstable scenario increases the risk of severe overestimation of $F/F_{MSY}$, potentially leading to unnecessary fishery closures or drastic allocation reductions.
+
+Lastly, the reliability of key reference point estimates remained consistent across all scenarios under normal recruitment conditions (@tbl-prob-wrong). The likelihood of incorrectly estimating $SSB/SSB_{MSST}$ (defined as a deviation $>10\%$) was under 50% for nearly all scenarios, ranging from 51% in the LSE to 30% in the NSE. Similarly, the probability of an incorrect $F/F_{MSY}$ estimate was below 50% for all scenarios, reaching a minimum of 29% in the NSE. These results indicate that under normal recruitment, current sampling efforts generally produce estimates within a 10% margin of the true value the majority of the time. The probability of significant estimation error (deviating $>10\%$ from the true value) is markedly higher under poor recruitment conditions (@tbl-prob-wrong). The likelihood of incorrectly estimating $SSB/SSB_{MSST}$ exceeded 50% for all sampling scenarios, reaching 85% in the NSE. Similarly, the probability of an incorrect $F/F_{MSY}$ estimate was greater than 50% for all scenarios, reaching 67% for the XLSE scenario. 
 
 ```{r}
 #| message: false
 #| warning: false
 #| label: fig-refpoints
-#| fig-cap: Distirbution of relative error for terminal year SSB, spawning stock biomass at minimum stock size threshold (SSB_MSST), the terminal year stock status (SSB/SSB_MSST), terminal year F, FMSY, and terminal year fishing status (F/FMSY). 
+#| fig-cap: Distribution of relative error for the terminal year stock status (SSB/SSB~MSST~) and terminal year fishing status (F/F~MSY~). 
 
 ref_pt_re <- read.csv("../ref_pt_re.csv")
 
@@ -334,7 +283,7 @@ ref_pt_re %>%
 #| label: tbl-refpoints
 #| tbl-cap: "Median relative error and standard deviation of relative error in the terminal year for SSB/SSB~MSST~ and F/F~MSY~ by scenario."
 ref_pt_re %>% 
-  filter(!str_detect(scenario, "IRFSelex_SQ|qprior" )) %>%
+  filter(!str_detect(scenario, "Selex" )) %>%
   group_by(scenario) %>%
   summarise(
     ssb_ssbmst_med = quantile(ssb_ssbmsst_re, .5, na.rm = TRUE), 
@@ -348,60 +297,24 @@ ref_pt_re %>%
       scen = case_when(
         scen == "FRSonly" ~ "NSE",
         scen == "HRF"     ~ "HSE",
-        scen == "HRFSelex"     ~ "HSE-Selectivity",
         scen == "IRF"     ~ "ISE",
-        scen == "IRFSelex"     ~ "ISE-Selectivity",
         scen == "LRF"     ~ "LSE",
-        scen == "LRFSelex"     ~ "LSE-Selectivity",
         scen == "XLRF"    ~ "XLSE"
       ),
       `SSB/SSB[MSST]`  = sprintf("%.3f (%.3f)", ssb_ssbmst_med, ssb_ssbmst_sd),
       `F/F[MSY]`       = sprintf("%.3f (%.3f)", f_fmsy_med, f_fmsy_sd),
       scen = factor(scen, levels = c(
-        "NSE", "XLSE", "LSE", "LSE-Selectivity", "ISE", "ISE-Selectivity", "HSE", "HSE-Selectivity"))
+        "NSE", "XLSE", "LSE", "ISE", "HSE"))
     ) %>%
   arrange(Rec_scenario, scen) %>%
   ungroup() %>%
-  select(scen, Rec_scenario, `SSB/SSB[MSST]`, `F/F[MSY]`) %>%
-  gt(groupname_col = "Rec_scenario") %>%
-  cols_label(
-    scen = "Scenario"
-  ) %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_row_groups()
-  ) %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_column_labels()
-  ) %>%
-  tab_options(
-    row_group.background.color = "#f0f0f0",
-    table.border.top.style = "solid",
-    table.border.bottom.style = "solid"
-  ) %>%
-  cols_label(
-    scen = "Scenario",
-    `SSB/SSB[MSST]` = md("SSB/SSB~MSST~"),
-    `F/F[MSY]`      = md("F/F~MSY~")
-  ) %>% 
-  tab_options(
-  table.border.top.style = "solid",
-  table.border.bottom.style = "solid",
-  table.border.top.width = px(1),
-  table.border.bottom.width = px(1),
-  column_labels.border.top.style = "solid",
-  column_labels.border.bottom.style = "solid",
-  column_labels.border.bottom.width = px(1),
-  table_body.hlines.style = "solid",
-  table_body.vlines.style = "solid",
-  table_body.vlines.width = px(1),
-  table.border.left.style = "solid",
-  table.border.right.style = "solid",
-  table.border.left.width = px(1),
-  table.border.right.width = px(1)
-)
+    select(scen, Rec_scenario, `SSB/SSB[MSST]`, `F/F[MSY]`) -> table_refpoints
 
+  format_pdf_table(
+    table_refpoints %>% select(-Rec_scenario),
+    column_names = c("Scenario", "SSB/SSB$_{MSST}$", "F/F$_{MSY}$"),
+    group_rows = c("Normal Recruitment" = 5, "Poor Recruitment" = 5)
+  )
 
 ```
 
@@ -409,7 +322,7 @@ ref_pt_re %>%
 #| label: tbl-prob-wrong
 #| tbl-cap: "Probability that reference points SSB/SSB~MSST~ and F/F~MSY~ are above or below 10% from the true value for each scenario."
 ref_pt_re %>% 
-  filter(!str_detect(scenario, "IRFSelex_SQ|qprior" )) %>%
+  filter(!str_detect(scenario, "Selex" )) %>%
   group_by(scenario) %>%
   summarise(
     p_ssb_ssbmsst_wrong = round(mean(abs(ssb_ssbmsst_re) > 0.1, na.rm = TRUE),2),
@@ -420,74 +333,32 @@ ref_pt_re %>%
       scen = case_when(
         scen == "FRSonly" ~ "NSE",
         scen == "HRF"     ~ "HSE",
-        scen == "HRFSelex"     ~ "HSE-Selectivity",
         scen == "IRF"     ~ "ISE",
-        scen == "IRFSelex"     ~ "ISE-Selectivity",
         scen == "LRF"     ~ "LSE",
-        scen == "LRFSelex"     ~ "LSE-Selectivity",
         scen == "XLRF"    ~ "XLSE"
       ),
       scen = factor(scen, 
-      levels = c("NSE", "XLSE", "LSE", "LSE-Selectivity", "ISE", "ISE-Selectivity", "HSE", "HSE-Selectivity"))
+      levels = c("NSE", "XLSE", "LSE", "ISE", "HSE"))
     ) %>%
   arrange(Rec_scenario, scen) %>%
   ungroup() %>%
-  select(scen, Rec_scenario, p_ssb_ssbmsst_wrong, p_f_fmsy_wrong) %>%
-  gt(groupname_col = "Rec_scenario") %>%
-  cols_label(
-    scen = "Scenario",
-    p_ssb_ssbmsst_wrong = md("SSB/SSB~MSST~"),
-    p_f_fmsy_wrong      = md("F/F~MSY~")
-  ) %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_row_groups()
-  ) %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_column_labels()
-  ) %>%
-  tab_options(
-    row_group.background.color = "#f0f0f0",
-    table.border.top.style = "solid",
-    table.border.bottom.style = "solid"
-  ) %>% 
-  tab_options(
-  table.border.top.style = "solid",
-  table.border.bottom.style = "solid",
-  table.border.top.width = px(1),
-  table.border.bottom.width = px(1),
-  column_labels.border.top.style = "solid",
-  column_labels.border.bottom.style = "solid",
-  column_labels.border.bottom.width = px(1),
-  table_body.hlines.style = "solid",
-  table_body.vlines.style = "solid",
-  table_body.vlines.width = px(1),
-  table.border.left.style = "solid",
-  table.border.right.style = "solid",
-  table.border.left.width = px(1),
-  table.border.right.width = px(1)
-)
+    select(scen, Rec_scenario, p_ssb_ssbmsst_wrong, p_f_fmsy_wrong) -> table_prob_wrong
+
+  format_pdf_table(
+    table_prob_wrong %>% select(-Rec_scenario),
+    column_names = c("Scenario", "SSB/SSB$_{MSST}$", "F/F$_{MSY}$"),
+    group_rows = c("Normal Recruitment" = 5, "Poor Recruitment" = 5)
+  )
 
 ```
 
-## Poor Recruitment Conditions 
+```{=latex}
+\FloatBarrier
+```
 
-Under poor recruitment conditions, most sampling scenarios exhibited comparable bias and precision for SSB (@fig-mre) and $F$ (@fig-Fmre). However, overall model performance degraded significantly compared to normal recruitment conditions. The NSE-hyperstable scenario was an expected outlier, performing substantially worse than all other configurations with an SSB terminal-year MRE of 38.6% ($SD = 0.294$) (@tbl-re-term-yr). For all other scenarios, SSB MRE was more moderate, ranging from 11.9% ($SD = 0.136$) in HSE to 14.4% ($SD = 0.192$) in XLSE.  
+## Effect of Survey Selectivity  
 
-Similarly, estimates of $F$ were less accurate under poor recruitment (@fig-Fmre). MRE for $F$ ranged from 1.2% ($SD = 0.206$) in NSE-hyperstable to –12.2% ($SD = 0.162$) in the XLSE (@tbl-re-term-yr). Interestingly, while the NSE-hyperstable scenario yielded the lowest bias for $F$ over the final decade, it was characterized by much higher variability throughout the projection period ($SD = 0.206$), making the estimates less reliable for consistent management. 
-
-Age-0 recruitment was estimated with similar accuracy in all scenarios except the NSE-hyperstable (@fig-recmre). Counter-intuitively, terminal-year recruitment estimates were less biased under poor recruitment than under normal recruitment conditions (@tbl-re-term-yr). Furthermore, precision was notably higher across all scenarios—including the NSE-hyperstable—throughout the entire projection period (@fig-recmre).
-
-The HSE scenario demonstrated the strongest performance for estimating terminal-year $SSB/SSB_{MSST}$ and $F/F_{MSY}$ (@fig-refpoints). This scenario produced the lowest variability, with MREs of 12.8% for $SSB/SSB_{MSST}$ and –11.5% for $F/F_{MSY}$ (@tbl-refpoints). Conversely, the NSE scenario performed the poorest for $SSB/SSB_{MSST}$, with an MRE of 38.9% ($SD = 0.293$). Critically, the true terminal-year stock status was not recovered in the majority of simulation runs for any scenario, as interquartile ranges failed to include zero. This suggests that under poor recruitment, all tested models tend to provide an overly optimistic view of stock status. The only exception was $F/F_{MSY}$ under the NSE-hyperstable scenario, where the MRE was near zero; however, this accuracy comes with a trade-off of extreme uncertainty. The wide range of relative error in the NSE-hyperstable scenario increases the risk of severe overestimation of $F/F_{MSY}$, potentially leading to unnecessary fishery closures or drastic allocation reductions.
-
-The probability of significant estimation error (deviating $>10\%$ from the true value) is markedly higher under poor recruitment conditions (@tbl-prob-wrong). The likelihood of incorrectly estimating $SSB/SSB_{MSST}$ exceeded 50% for all sampling scenarios, reaching 85% in the NSE. Similarly, the probability of an incorrect $F/F_{MSY}$ estimate was greater than 50% for all scenarios, reaching 67% for the XLSE scenario. 
-
-### Effect of Survey Selectivity  
-
-Independent of survey effort, changing the research survey gear to produce logistic rather than dome-shaped selectivity affected SSB estimation, but the effect was not uniform across effort levels (@fig-selectivity-comparison). At HSE, logistic selectivity performed comparably to — or marginally better than — dome selectivity (SSB MRE 11.0% vs. 11.9%), (@tbl-re-term-yr). At ISE, logistic selectivity produced noticably higher bias than dome (SSB MRE of 13.4% vs. 12.1%) (@tbl-re-term-yr). And at LSE, the two converged again (13.6% vs. 13.3%). This pattern suggests the impact of selectivity shape is concentrated at intermediate survey effort, where there is enough information for the estimation model to converge confidently on a biased solution, but not enough to resolve it.
-
-This effort-dependent pattern was traced to the confounding of survey catchability and SSB: across all scenarios, terminal-year SSB relative error was strongly correlated with $q$ relative error (r = 0.71–0.89) (@fig-q-ssb-cor), consistent with the known identifiability issue between $q$ and an asymptotic selectivity curve that lacks an interior peak to anchor scale. Applying an informative prior on $\ln(q)$ in the ISE logistic-selectivity scenario reduced SSB MRE from 13.4% to 7.6% and substantially tightened the distribution (SD went from 0.148 to 0.104), supporting catchability identifiability as the mechanism driving the degraded performance under logistic selectivity at intermediate effort.
+Independent of survey effort, changing the research survey gear to produce logistic rather than dome-shaped selectivity affected SSB estimation, but the effect was not uniform across effort levels or recruitment conditions (@fig-selectivity-comparison). Under normal recruitment conditions, logistic selectivity performed worse than dome-shaped in terms of terminal year SSB MRE and MRE actually slightly increased as effort levels increased (@fig-selectivity-comparison, \Cref{tbl-selectivity-mre}). At HSE, SSB MRE was 6.2% compared to 5.7% at LSE. As with dome-shaped selectivity, ISE under normal recruitment conditions had the lowest SSB MRE (5.6%) with logistic selectivity. However, under poor recruitment conditions, the patterns were different with logistic selectivity. The highest SSB MRE was LSE, followed closely by ISE (@fig-selectivity-comparison) and both were higher than the dome-shaped selectivity scenarios. However, under high survey effort, logistic selectivity performed better than dome-shaped (@fig-selectivity-comparison). Interestingly, if an informative prior was applied to catchability under ISE with dome-shaped selectivity, there was noticable improvement (SSB MRE = 9.2%). Adding an informative prior on catchability when recruitment conditions were poor out performed models with higher survey effort. This finding can have implications for the trade-offs and statical properties of the model that are important to consider when making changes to survey design and implementation.  
 
 
 ```{r}
@@ -496,7 +367,7 @@ This effort-dependent pattern was traced to the confounding of survey catchabili
 ts_re %>%
 filter(
   year == 2048 & 
-  !str_detect(scenario, "SQ|FRSonly|XLRF" )) %>%
+  !str_detect(scenario, "FRSonly|XLRF" )) %>% 
 group_by(scenario, year) %>% 
 summarise(med_re = quantile((SpawnBio_re), 0.5, na.rm = TRUE)) %>% 
   extract(
@@ -518,17 +389,77 @@ summarise(med_re = quantile((SpawnBio_re), 0.5, na.rm = TRUE)) %>%
   stockplotr::theme_noaa() + 
   scale_fill_brewer(palette = "Set1") + 
   labs(x = NULL, y = "Terminal Year SSB MRE (%)") +
+  facet_wrap(~Rec_scenario) +
   theme(legend.position = "top")
 
 
 ```
 
-```{r}
-#| label: fig-q-ssb-cor
-#| fig-cap: "Probability that reference points SSB/SSB~MSST~ and F/F~MSY~ are above or below 10% from the true value for each scenario."
-#| fig-width: 9
-#| fig-height: 10
 
+This effort-dependent pattern was traced to the confounding of survey catchability and SSB: across all scenarios, terminal-year SSB relative error was strongly correlated with $q$ relative error (Pearson correlation coefficient = 0.71–0.89), consistent with the known identifiability issue between $q$ and an asymptotic selectivity curve that lacks an interior peak to anchor scale. Applying an informative prior on $\ln(q)$ in the ISE logistic-selectivity scenario reduced SSB MRE from 14.6% to 9.2% and substantially tightened the distribution (SD went from 0.148 to 0.104), supporting catchability identifiability as the mechanism driving the degraded performance under logistic selectivity at intermediate effort.
+
+```{r}
+#| label: tbl-selectivity-mre
+#| tbl-cap: "Median relative error of terminal year spawning biomass and standard deviation for selectivity scenarios under normal and poor recruitment conditions."
+table_selectivity_mre <- ts_re %>%
+filter(year <= 2048 & str_detect(scenario, "Selex")) %>% 
+group_by(scenario, year) %>%
+summarise(
+  SpawnMed = quantile((SpawnBio_re), 0.5, na.rm = TRUE),
+  SpawnSD = sd(SpawnBio_re)) %>% 
+  separate(col = scenario, into = c("scenario", "yrs"), sep = "_25",
+  remove = F) %>% 
+separate(col = scenario, into = c("scen", "Rec_scenario", "extra")) %>%
+mutate(Rec_scenario = ifelse(Rec_scenario == "poorrec", "Poor Recruitment", "Normal Recruitment"))%>% 
+filter(year == max(year)) %>%
+mutate(
+    scen = case_when(
+      scen == "HRFSelex"     ~ "HSE-Selectivity",
+      scen == "IRFSelex" & extra == "qprior" ~ "ISE-Selectivity-q-prior",
+      scen == "IRFSelex"     ~ "ISE-Selectivity", 
+      scen == "LRFSelex"     ~ "LSE-Selectivity"
+    ),
+    `Spawning Biomass`  = sprintf("%.3f (%.3f)", SpawnMed, SpawnSD),
+    scen = factor(scen, 
+    levels = c("LSE-Selectivity", "ISE-Selectivity", "ISE-Selectivity-q-prior", "HSE-Selectivity"))
+  ) %>%
+  arrange(Rec_scenario, scen) %>%
+  ungroup() %>%
+  select(scen, Rec_scenario, `Spawning Biomass`)
+
+format_pdf_table(
+  table_selectivity_mre %>% select(-Rec_scenario),
+  column_names = c("Scenario", "Spawning Biomass"),
+  group_rows = c("Normal Recruitment" = 3, "Poor Recruitment" = 4)
+)
+
+
+  # gt(groupname_col = "Rec_scenario") %>%
+  # cols_label(
+  #   scen = "Scenario"
+  # ) %>%
+  # tab_style(
+  #   style = cell_text(weight = "bold"),
+  #   locations = cells_row_groups()
+  # ) %>%
+  # tab_style(
+  #   style = cell_text(weight = "bold"),
+  #   locations = cells_column_labels()
+  # ) %>%
+  # tab_options(
+  #   row_group.background.color = "#f0f0f0",
+  #   table.border.top.style = "solid",
+  #   table.border.bottom.style = "solid"
+  # ) %>%
+  # apply_table_style()
+
+
+```
+
+
+```{r}
+
+#| message: false
 # q_df <- scalar_df %>% calculate_re() %>% select(c("scenario", "iteration", "LnQ_base_ResFish_3_re")) 
 
 # scale_re_full <- ts_re %>% 
@@ -536,65 +467,113 @@ summarise(med_re = quantile((SpawnBio_re), 0.5, na.rm = TRUE)) %>%
 # filter(!str_detect(scenario, "FRSonly")) %>% 
 # left_join(q_df, by = c("scenario", "iteration")) 
 
-# write.csv(scale_re_full, file = "scale_re_full.csv", row.names = F)
+# write.csv(scale_re_full, file = "./Report/scale_re_full.csv", row.names = F)
  
-scale_re_full <- read.csv("../scale_re_full.csv")
+# scale_re_full <- read.csv("../scale_re_full.csv")
 
-# Set factor order to match your original facet layout
-scenario_order <- c(
-  "HRF_poorrec_25_yrfwd", "HRF_SQ_25_yrfwd", "HRFSelex_poorrec_25_yrfwd",
-  "IRF_poorrec_25_yrfwd", "IRF_SQ_25_yrfwd", "IRFSelex_poorrec_25_yrfwd",
-  "IRFSelex_poorrec_qprior_25_yrfwd", 
-  "LRF_poorrec_25_yrfwd", "LRF_SQ_25_yrfwd", "LRFSelex_poorrec_25_yrfwd",
-  "XLRF_poorrec_25_yrfwd", "XLRF_SQ_25_yrfwd"
-)
-scenario_labels <- c(
-  "HSE Poor Recruitment", "HSE Normal Recruitment", "HSE Selectivity", 
-  "ISE Poor Recruitment", "ISE Normal Recruitment", "ISE Selectivity",
-  "ISE Selectivity q-prior", "LSE Poor Recruitment", "LSE Normal Recruitment", 
-  "LSE Selectivity", "XLSE Poor Recruitment", "XLSE Normal Recruitment"
+# # Set factor order to match your original facet layout
+# scenario_order <- c(
+#   "HRF_poorrec_25_yrfwd", "HRF_SQ_25_yrfwd", "HRFSelex_poorrec_25_yrfwd", "HRFSelex_SQ_25_yrfwd",
+#   "IRF_poorrec_25_yrfwd", "IRF_SQ_25_yrfwd", "IRFSelex_poorrec_25_yrfwd", "IRFSelex_SQ_25_yrfwd", 
+#   "IRFSelex_poorrec_qprior_25_yrfwd", 
+#   "LRF_poorrec_25_yrfwd", "LRF_SQ_25_yrfwd", "LRFSelex_poorrec_25_yrfwd", "LRFSelex_SQ_25_yrfwd"
+# )
+# scenario_labels <- c(
+#   "HSE Poor Dome", "HSE Normal Dome", "HSE Poor Logistic", "HSE Normal Logistic", 
+#   "ISE Poor Dome", "ISE Normal Dome", "ISE Poor Logistic", "ISE Normal Logistic",
+#   "ISE Poor Logistic-q-prior", "LSE Poor Dome", "LSE Normal Dome", 
+#   "LSE Poor Logistic", "LSE Normal Logistic"
 
-)
+# )
 
-plot_df <- scale_re_full %>%
-filter(!str_detect(scenario, "Selex_SQ")) %>%
-  mutate(scenario = factor(scenario, levels = scenario_order, labels = scenario_labels)) %>% 
-filter(year == 2048)
+# plot_df <- scale_re_full %>%
+#   filter(!str_detect(scenario, "XLRF") & !str_detect(scenario, "FRSonly")) %>% 
+#   mutate(scenario = factor(scenario, levels = scenario_order, labels = scenario_labels)) %>% 
+#   filter(year == 2048) %>% 
+#   separate(
+#     scenario, 
+#     into = c("Effort", "Recruitment", "Selectivity"), 
+#     sep = " ", remove = FALSE) %>%
+#     mutate(
+#       group = interaction(Recruitment, Selectivity, sep = " - ", drop = TRUE)
+#     ) 
 
 # Compute one correlation per scenario
-cor_labels <- plot_df %>%
-  group_by(scenario) %>%
-  summarise(
-    r = cor(LnQ_base_ResFish_3_re, SpawnBio_re, use = "complete.obs"),
-    .groups = "drop"
-  ) %>%
-  mutate(label = paste0("r = ", sprintf("%.2f", r)))
+# cor_labels <- plot_df %>%
+#   group_by(scenario) %>%
+#   summarise(
+#     r = cor(LnQ_base_ResFish_3_re, SpawnBio_re, use = "complete.obs"),
+#     .groups = "drop"
+#   ) %>%
+#   mutate(label = paste0("r = ", sprintf("%.2f", r)))
 
-# Fixed label position (top-left corner), since your original used fixed 
-# axis scales (-0.05 to 0.05 on x, -0.2 to 0.6 on y)
-label_x <- -0.048
-label_y <- 0.58
+# # Fixed label position (top-left corner), since your original used fixed 
+# # axis scales (-0.05 to 0.05 on x, -0.2 to 0.6 on y)
+# label_x <- -0.048
+# label_y <- 0.58
 
-plot_df %>% 
-ggplot(aes(x = LnQ_base_ResFish_3_re, y = SpawnBio_re)) + 
-geom_hline(yintercept = 0, color = "grey50", alpha = 0.8, linewidth = 0.3) +
-geom_point(aes(color = SpawnBio_re), size = 1.6) +
-geom_text(
-  data = cor_labels,
-  aes(x = label_x, y = label_y, label = label),
-  inherit.aes = FALSE, hjust = 0, vjust = 1,
-  size = 3, fontface = "bold", color = "black"
-) +
-facet_wrap(~scenario, ncol = 3, labeller= labeller(scenario = label_wrap_gen(width = 16))) +
-coord_cartesian(xlim = c(-0.05, 0.05), ylim = c(-0.2, 0.6)) +
-scale_x_continuous(breaks = c(-0.05, 0, 0.05),
-                    labels = scales::label_number(accuracy = 0.01)) +
-stockplotr::theme_noaa() +
-scale_color_distiller(palette = "Spectral", name = "Spawning Biomass\nRelative Error") +
-labs(x = "Catchability Relative Error", y = "SSB Relative Error") +
-theme(
-  strip.text = element_text(size = 8, lineheight = 0.85),
-  axis.text.x = element_text(size = 7),
-  panel.spacing = unit(0.6, "lines")
-) 
+# plot_df %>% 
+# ggplot(aes(x = LnQ_base_ResFish_3_re, y = SpawnBio_re)) + 
+# geom_hline(yintercept = 0, color = "grey50", alpha = 0.8, linewidth = 0.3) +
+# geom_point(aes(color = SpawnBio_re), size = 1.6) +
+# geom_text(
+#   data = cor_labels,
+#   aes(x = label_x, y = label_y, label = label),
+#   inherit.aes = FALSE, hjust = 0, vjust = 1,
+#   size = 3, fontface = "bold", color = "black"
+# ) +
+# facet_wrap(~scenario, ncol = 3, labeller= labeller(scenario = label_wrap_gen(width = 16))) +
+# coord_cartesian(xlim = c(-0.05, 0.05), ylim = c(-0.2, 0.6)) +
+# scale_x_continuous(breaks = c(-0.05, 0, 0.05),
+#                     labels = scales::label_number(accuracy = 0.01)) +
+# stockplotr::theme_noaa() +
+# scale_color_distiller(palette = "Spectral", name = "Spawning Biomass\nRelative Error") +
+# labs(x = "Catchability Relative Error", y = "SSB Relative Error") +
+# theme(
+#   strip.text = element_text(size = 8, lineheight = 0.85),
+#   axis.text.x = element_text(size = 7),
+#   panel.spacing = unit(0.6, "lines")
+# ) 
+
+```
+
+```{r}
+
+#| label: fig-pearson-r-corr
+#| fig-cap: "Pearson correlations between terminal-year survey spawning stock biomass relative error and catchability relative error, for high (HSE), intermediate (ISE), and low (LSE) survey efforts, under normal and poor recruitment conditions, and for dome-shaped selectivity, logistic selectivity, and logistic selectivity with a prior on catchabiltiy (logistic-q-prior). Points show the estimated correlation coefficient and error bars show 95% confidence intervals."
+# cor_summary <- plot_df %>%
+#   group_by(Effort, Recruitment, Selectivity) %>%
+#   summarise(
+#     n = sum(complete.cases(LnQ_base_ResFish_3_re, SpawnBio_re)),
+#     r = cor(LnQ_base_ResFish_3_re, SpawnBio_re, use = "complete.obs"),
+#     .groups = "drop"
+#   ) %>%
+#   mutate(
+#     z = atanh(r),
+#     se = 1 / sqrt(n - 3),
+#     lower = tanh(z - qnorm(0.975) * se),
+#     upper = tanh(z + qnorm(0.975) * se)
+#   )
+
+# ggplot(
+#   cor_summary,
+#   aes(
+#     x = Effort, y = r,
+#     ymin = lower, ymax = upper,
+#     color = Selectivity
+#   )
+# ) +
+#   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.3) +
+#   geom_pointrange(
+#     position = position_dodge(width = 0.45),
+#     linewidth = 0.5
+#   ) +
+#   facet_wrap(~Recruitment) +
+#   scale_color_brewer(palette = "Dark2", name = "Selectivity") +
+#   coord_cartesian(ylim = c(0.65, 0.95)) +
+#   stockplotr::theme_noaa() +
+#   labs(
+#     x = "Survey effort",
+#     y = "Pearson correlation, r"
+#   )
 ```

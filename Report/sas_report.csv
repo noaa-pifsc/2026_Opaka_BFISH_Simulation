@@ -7,6 +7,9 @@ IRF_SQ,557,45,0.18,0.15,effort
 IRF_poorrec,557,45,0.18,0.15,effort
 HRF_SQ,632,60,0.15,0.1,effort
 HRF_poorrec,632,60,0.15,0.1,effort
+LRFSelex_SQ,407,30,0.24,0.2,selectivity
+IRFSelex_SQ,557,45,0.18,0.15,selectivity
+HRFSelex_SQ,632,60,0.15,0.1,selectivity
 IRFSelex_poorrec_qprior,557,45,0.18,0.15,selectivity
 IRFSelex_poorrec,557,45,0.18,0.15,selectivity
 HRFSelex_poorrec,632,60,0.15,0.1,selectivity
