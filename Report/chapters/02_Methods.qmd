@@ -2,12 +2,12 @@
 
 ## Simulation Approach  
 
-We tested the impact of varying sampling efforts of a fishery-independent survey by simulating abundance trends and data for {{< var species.hawaiian >}} in the main Hawaiian islands given appropriate process and observational error. We fit the simulated data to an age-structured catch-at-age model and estimated spawning stock biomass, fishing mortality, and management reference points [@syslo_benchmark_2024]. Both the operating model (OM) and estimation model (EM) were built in Stock Synthesis [@methot_stock_2013] (SS3) and the simulation-estimation process was implemented using *ss3sim* [@ss3sim2014, @R-ss3sim] in the R statistical software environment [@R-core-team]. In total, 1,400 iterations (100 iterations per scenario) were run using the Open Science Grid [@osg07, @osg09, @https://doi.org/10.21231/906p-4d78, @https://doi.org/10.21231/0kvz-ve57]. Each iteration involved (1) generating the population dynamics from the OM, with the given F and recruitment deviations timeseries, (2) sampling data from the OM with observational error, and (3) fitting those data in an EM. For each iteration, estimated quantities of interest were compared to the "true" values as calculated by the OM. All code for the analysis is available in the [GitHub repository](https://github.com/noaa-pifsc/Opaka_simulation). 
+We tested the impact of varying sampling efforts of a fishery-independent survey by simulating abundance trends and data for {{< var species.hawaiian.lower >}} in the main Hawaiian islands given appropriate process and observational error. We fitted the simulated data to an age-structured catch-at-age model and estimated spawning stock biomass, fishing mortality, and management reference points [@syslo_benchmark_2024]. Both the operating model (OM) and estimation model (EM) were built in Stock Synthesis [@methot_stock_2013] (SS3) and the simulation-estimation process was implemented using *ss3sim* [@ss3sim2014; @R-ss3sim] in the R statistical software environment [@R-core-team]. In total, 1,400 iterations (100 iterations per scenario) were run using the Open Science Grid [@osg07, @osg09, @https://doi.org/10.21231/906p-4d78, @https://doi.org/10.21231/0kvz-ve57]. Each iteration involved (1) generating the population dynamics from the OM, with the given F and recruitment deviations time series, (2) sampling data from the OM with observational error, and (3) fitting those data in an EM. For each iteration, estimated quantities of interest were compared to the "true" values as calculated by the OM. All code for the analysis is available in the [GitHub repository](https://github.com/noaa-pifsc/Opaka_simulation). 
 
 ## Operating Model  
 
-The operating model was a single-species, single-sex, age-structured model conditioned on {{< var species.hawaiian >}} life history parameters and historical fishery data  from the Deep-7 complex. Historical data included 75 years of catch, CPUE, and size data from commercial and non-commercial fisheries, plus seven years of abundance indices and length composition data from the BFISH survey.
-The OM simulated population dynamics and generated abundance indices and compositional data for 100 years. Fishing mortality time series were generated based on historical patterns: low values at fishery inception, increasing through the 1970s and remaining high until the late 1990s, then declining in the early 2000s and stabilizing through the end of the time series (@fig-F-timeseries). Annual fishing mortality values included stochastic variability (standard deviation of 0.002) to introduce realistic variation between iterations. Following the most recent Deep-7 benchmark stock assessment, we applied time-varying ratios for non-commercial catch: 1.94 from 1948-2003 and 1.09 for 2004-2049 [@syslo_benchmark_2024]. 
+The operating model was a single-species, single-sex, age-structured model conditioned on {{< var species.hawaiian.lower >}} life history parameters and historical fishery data from the Deep-7 complex. Historical data included 75 years of catch, CPUE, and size data from commercial and non-commercial fisheries, plus seven years of abundance indices and length composition data from the BFISH survey.
+The OM simulated population dynamics and generated abundance indices and compositional data for 100 years. Fishing mortality time series were generated based on historical patterns: low values at fishery inception, increasing through the 1970s and remaining high until the late 1990s, then declining in the early 2000s and stabilizing through the end of the time series (\Cref{fig-F-timeseries}). Annual fishing mortality values included stochastic variability (standard deviation of 0.002) to introduce realistic variation between iterations. Following the most recent Deep-7 benchmark stock assessment, we applied time-varying ratios for non-commercial catch: 1.94 from 1948-2003 and 1.09 for 2004-2049 [@syslo_benchmark_2024]. 
 
 ```{r}
 #| label: setup
@@ -15,8 +15,6 @@ The OM simulated population dynamics and generated abundance indices and composi
 #| message: false
 #| warning: false
 library(tidyverse)
-library(gt)
-
 source("../table_style.R")
 
 # renv::install("katiejolly/nationalparkcolors")
@@ -32,7 +30,7 @@ source("../table_style.R")
 ```{r}
 #| message: false
 #| label: fig-F-timeseries
-#| fig-cap: 100 unique time series of fishing mortality for the commercial (red lines) and non-commercial (blue lines) fisheries used for each iteration.
+#| fig-cap: 100 unique time series of fishing mortality for the commercial (green lines) and non-commercial (orange lines) fisheries used for each iteration.
 load("../constantF_mat.RData")
 
 comm <- F_comm_df %>% 
@@ -54,20 +52,23 @@ bind_rows(noncomm) %>%
 ggplot(aes(x = Year, y = `Fishing Mortality`)) + 
 geom_line(aes(group = interaction(number, Fishery), color = Fishery), alpha = .65) +
 stockplotr::theme_noaa() +
-  scale_colour_brewer(
-    palette = "Set1",
-    name = "Fishery"
-  ) 
+scale_colour_manual(
+  values = c(
+    "Commercial" = "#1B9E77FF",
+    "Non-Commercial" = "#D95F02FF"
+  ),
+  name = "Fleet"
+) 
 
 ```
 
 ### Recruitment Deviations
 
-The simulation framework was structured to evaluate estimation model performance under varying future conditions. The first 75 years of the 100-year simulation represented the historical period with known data patterns, while the final 25 years constituted the "future years" designed to test the robustness of the estimation model against potential changes in recruitment dynamics. Two distinct recruitment scenarios were implemented for these future years to bracket plausible recruitment conditions: (1) a "normal" recruitment scenario that maintained historical mean recruitment levels with no systematic change over time, and (2) a "poor recruitment" scenario that imposed a 40% decline in mean recruitment relative to historical levels. This approach allowed us to assess whether survey sampling intensity affects the estimation model's ability to detect and respond to recruitment shifts that could significantly impact stock productivity and sustainable harvest levels. A total of 200 recruitment deviation time series were generated, 100 were independent, bias-corrected lognormal random deviates with a standard deviation ($σ_R$) of 0.52 for the entire 100 years, and the remaining 100 were the same for the first 75 years and then the last 25 years were calculated to drive a decline in recruitment.
+The simulation framework was structured to evaluate estimation model performance under varying future conditions. The first 75 years of the 100-year simulation represented the historical period with known data patterns, while the final 25 years constituted the "future years" designed to test the robustness of the estimation model against potential changes in recruitment dynamics. Two distinct recruitment scenarios were implemented for these future years to bracket plausible recruitment conditions: (1) a "normal" recruitment scenario that maintained historical mean recruitment levels with no systematic change over time, and (2) a "poor recruitment" scenario that imposed a 40% decline in mean recruitment relative to historical levels. This approach allowed us to assess whether survey sampling intensity affects the estimation model's ability to detect and respond to recruitment shifts that could significantly impact stock productivity and sustainable harvest levels. A total of 200 recruitment deviation time series were generated, 100 were independent, bias-corrected log-normal random deviates with a standard deviation ($σ_R$) of 0.52 for the entire 100 years, and the remaining 100 were the same for the first 75 years and then the last 25 years were calculated to drive a decline in recruitment.
 
 The baseline recruitment level was established using the mean recruitment from the most recent 15-year period (280,000 individuals), representing contemporary recruitment conditions prior to the simulated decline. 
 
-The declining recruitment scenario was structured as a two-phase process spanning 25 years. Phase 1 comprised a 10-year transition period characterized by a smooth exponential decline from baseline recruitment. The annual porportional rate of change (*r*) was calculated as:
+The declining recruitment scenario was structured as a two-phase process spanning 25 years. Phase 1 comprised a 10-year transition period characterized by a smooth exponential decline from baseline recruitment. The annual proportional rate of change (*r*) was calculated as:
 $$
 r = M_{\text{target}}^{\frac{1}{10}} - 1
 $$
@@ -84,7 +85,7 @@ Projected deterministic recruitment values ($R_t = \bar{R} \cdot M_t$) were conv
 $$
 \delta_t = \ln\left(\frac{R_t}{\bar{R}}\right)
 $$
-where $\bar{R}$ is the baseline mean recruitment (279.67). No bias-correction term was applied at this step because $\delta_t$ is a deterministic quantity, not a random draw, so there is no lognormal inflation to correct for. 
+where $\bar{R}$ is the baseline mean recruitment (279.67). No bias-correction term was applied at this step because $\delta_t$ is a deterministic quantity, not a random draw, so there is no log-normal inflation to correct for. 
 
 To incorporate realistic recruitment variability around the deterministic decline trend, we generated 100 Monte Carlo iterations of the low-recruitment time series. For each iteration $i$, final recruitment deviations ($\delta_{t,i}$) were calculated by adding random process noise ($\varepsilon_{t,i}$), bias-corrected so that the stochastic realizations were centered on the deterministic trend:
 $$
@@ -97,38 +98,81 @@ This additional stochastic noise ($\sigma = 0.15$) was intentionally set smaller
 ```{r}
 #| message: false
 #| label: fig-rec_dev
-#| fig-cap: Log recruitment deviations for one iteration used in the normal (red solid line) and poor (blue dashed line) recruitment scenarios.
+#| fig-width: 7
+#| fig-height: 5.5
+#| fig-cap: Log recruitment deviations for one iteration over the simulation time period. Recruitment deviations in the historical period (1949-2023, grey shaded area and grey line) were the same for both recruitment conditions, but after 2023 they diverged. The normal (purple line) condition assumed recruitment pattens from the historical period continued into the future. The poor recruitment scenario (green line) assumed there was a 10 year period of declining recruitment, followed by a constant reduced recruitment (compared to the normal).  
  ts_df <- read.csv("../all_scens_ts.csv")
 
-ts_df %>%
-filter(model_run == "om" & str_detect(scenario, "IRF_") & iteration == 14) %>%
-mutate(scenario = factor(scenario, levels = c("IRF_SQ_25_yrfwd", "IRF_poorrec_25_yrfwd"))) %>% 
-ggplot() + 
-geom_hline(yintercept = 0, linewidth = 1.2, color = "grey60") +
-geom_line(aes(x = year, y = rec_dev, group = scenario, color = scenario, linetype = scenario), linewidth = 1.3) +
-labs(x = "Year", y = "Log Recruitment Deviation") + 
-stockplotr::theme_noaa() +
-scale_colour_brewer(
-  palette = "Set1", 
-  name = "Recruitment Scenario", labels = c("Normal", "Poor")
-  )  +
-scale_linetype_manual(
-  name = "Recruitment Scenario", 
-  labels = c("Normal", "Poor"),
-  values = c("solid", "dashed")
-)
+library(ggmagnify)
+p_full <- ts_df %>%
+  filter(model_run == "om", str_detect(scenario, "IRF_"), iteration == 14) %>%
+  mutate(
+    scenario = factor(
+      scenario,
+      levels = c("IRF_SQ_25_yrfwd", "IRF_poorrec_25_yrfwd"),
+      labels = c("Normal Recruitment", "Poor Recruitment")
+    )
+  ) %>%
+  ggplot() +
+  geom_rect(
+    aes(xmin = -Inf, xmax = 2022, ymin = -Inf, ymax = Inf),
+    inherit.aes = FALSE,
+    fill = "grey95"
+  ) +
+  geom_hline(yintercept = 0, linewidth = 1, color = "grey80") +
+  geom_vline(xintercept = 2023, linetype = "dotted", color = "grey55") +
+  geom_line(
+    data = ~filter(.x, year <= 2023),
+    aes(year, rec_dev, group = 1),
+    color = "grey35",
+    linewidth = 0.65
+  ) +
+  geom_line(
+    data = ~filter(.x, year >= 2023),
+    aes(year, rec_dev, color = scenario, linetype = scenario),
+    linewidth = 0.85
+  ) +
+  labs(x = "Year", y = "Log Recruitment Deviation") +
+  coord_cartesian(
+  xlim = c(1947, 2054),
+  ylim = c(-2.3, 2.6)
+  ) +
+  scale_y_continuous(breaks = -2:2) +
+  stockplotr::theme_noaa() +
+  scale_colour_manual(
+  values = c(
+    "Normal Recruitment" = "#9F5691FF",
+    "Poor Recruitment" = "#92C051FF"
+  ),
+  name = "Recruitment Scenario"
+  ) +
+  scale_linetype_manual(
+    values = c(
+      "Normal Recruitment" = "solid",
+      "Poor Recruitment" = "solid"
+    ),
+    name = "Recruitment Scenario"
+  ) +
+  theme(legend.position = "bottom",
+    panel.background = element_rect(fill = "white", colour = NA),
+    plot.background = element_rect(fill = "white", colour = NA))
+
+from <- c(xmin = 2023, xmax = 2049, ymin = -2, ymax = 1.5)
+to <- c(xmin = 1975, xmax = 2020, ymin = 1, ymax = 2.5)
+
+p_full + geom_magnify(from = from, to = to)
 
 ```
 
 ### Initial Fishing Mortality and Selectivity
 
-Initial instantaneous fishing mortality was fixed at 0.012 for the commercial fishery and assumed to start at equilibrium for the non-commercial fishery. Logistic selectivity was modeled for the commercial and non-commercial fisheries and a dome-shaped double normal selectivity model was used for the research fishing survey (@fig-selex). Evidence has shown that the research fishing survey gear tends to select for smaller {{< var species.hawaiian >}} and very few larger {{< var species.hawaiian >}}, potentially due to the stratified, random design of selecting fishing locations. This "naive" way of selecting fishing location is different from how a commercial fisher would select where to fish because they want to optmize their time and catch larger fish. Additionally,  {{< var species.hawaiian >}} is a nighttime fishery, but due to constraints, the research fishing survey is only conducted during daylight hours. This could be another reason why the research fishing survey catches fewer large individuals.
+Initial instantaneous fishing mortality was fixed at 0.012 for the commercial fishery and assumed to start at equilibrium for the non-commercial fishery. Logistic selectivity was modeled for the commercial and non-commercial fisheries and a dome-shaped double normal selectivity model was used for the research fishing survey (\Cref{fig-selex}). Evidence has shown that the research fishing survey gear tends to select for smaller {{< var species.hawaiian.lower>}} and very few larger {{< var species.hawaiian.lower>}}, potentially due to the stratified, random design of selecting fishing locations. This "naive" way of selecting fishing location is different from how a commercial fisher would select where to fish because they want to optimize their time and catch larger fish. Additionally, {{< var species.hawaiian.lower>}} is a nighttime fishery, but due to constraints, the research fishing survey is only conducted during daylight hours. This could be another reason why the research fishing survey catches fewer large individuals.
 
 ```{r}
 #| warning: false
 #| message: false
 #| label: fig-selex
-#| fig-cap: Selectivity functions used for the commercial (red line), non-commercial (blue line), and survey (green line).
+#| fig-cap: Selectivity functions used for the commercial (green line), non-commercial (orange line), and survey (purple line).
 rep <- r4ss::SS_output(dir = "../../models/02_Opaka_BFISH_simulation_EM", verbose = F, printstats=FALSE)
 
 rep$sizeselex %>% 
@@ -145,14 +189,14 @@ ggplot(aes(x = Length, y = Selectivity)) +
 geom_line(aes(color = Fleet), linewidth = 1.5) + 
 stockplotr::theme_noaa() +
 labs(x = "Length (cm)") +
-scale_colour_brewer(palette = "Set1") 
+scale_colour_brewer(palette = "Dark2") 
 ```
 
 ### Observation Error Specification  
-Sampling error (variability in data sampled from the OM) and observation error specified in the EM were the same, ensuring no misspecification of uncertainty. The CV for indices of abundance and effective sample size for length composition remained constant across all years within each scenario (@tbl-sas). The CVs for each effort scenario were determined by fitting a linear regression to actual number of grids sampled and corresponding model-based index of abundance CVs for the seven years of research fishing survey data. Effective sample size was based on the actual number of PSU sampled per year.
+Sampling error (variability in data sampled from the OM) and observation error specified in the EM were the same, ensuring no misspecification of uncertainty. The CV for indices of abundance and effective sample size for length composition remained constant across all years within each scenario (\Cref{tbl-sas}). The CVs for each effort scenario were determined by fitting a linear regression to actual number of grids sampled and corresponding model-based index of abundance CVs for the seven years of research fishing survey data. Effective sample size was based on the actual number of PSU sampled per year.
 
 ### Data Sources   
-All scenarios had some combination of catch, abundance index, and length composition data available for the EM (@fig-data). For all survey scenarios (HSE through XLSE), commercial CPUE and length data were discontinued after 2023, forcing the estimation model to rely entirely on survey-based abundance and length data for the final 25 years. This design allowed us to isolate the effect of survey data quality on assessment performance. In contrast, the NSE scenarios continued using commercial fishery data throughout the entire time series.
+All scenarios had some combination of catch, abundance index, and length composition data available for the EM (\Cref{fig-data}). For all survey scenarios (HSE through XLSE), commercial CPUE and length data were discontinued after 2023, forcing the estimation model to rely entirely on survey-based abundance and length data for the final 25 years. This design allowed us to isolate the effect of survey data quality on assessment performance. In contrast, the NSE scenarios continued using commercial fishery data throughout the entire time series.
 
 ```{r}
 #| message: false
@@ -160,7 +204,7 @@ All scenarios had some combination of catch, abundance index, and length composi
 #| fig-width: 7
 #| fig-height: 9
 #| label: fig-data
-#| fig-cap: "Data generated from operating models and used in the estimation models with the survey (a) and the estimation models without the survey (b). The size of each point represents the relative amount of data available per year and fleet (i.e. large points represent years with more data)."
+#| fig-cap: "Data generated from operating models and used in the estimation models with the survey (a) and the estimation models without the survey (b). The size of each point represents the relative amount of data available per year and fleet (i.e. large points represent years with more data). Green dots represent the commercial fishery, orange dots are for the non commercial fishery, and purple dots are for the BFISH survey."
 
 reps <- r4ss::SSgetoutput(
   dirvec = c("../../FRSonly_SQ_25_yrfwd/1/em",
@@ -172,20 +216,20 @@ par(mar = c(5,4,4,2))
 
 # First plot
 r4ss::SSplotData(reps$replist1, subplots = 2, 
-                 fleetcol = c("#E41A1C", "#377EB8"), 
+                 fleetcol = c("#1B9E77FF", "#D95F02FF"), 
                  fleetnames = c("Commercial", "Non Commercial"))
 title("b) Without survey", adj = 0, font.main = 2)
 
 # Second plot
 r4ss::SSplotData(reps$replist2, subplots = 2, 
-                 fleetcol = c("#E41A1C", "#377EB8", "#4DAF4A" ), 
+                 fleetcol = c("#1B9E77FF", "#D95F02FF", "#7570B3FF"), 
                  fleetnames = c("Commercial", "Non Commercial", "Survey"))
 title("a) With survey", adj = 0, font.main = 2)
 ```
 
 ## Scenarios
 
-We evaluated five sampling scenarios to assess how different levels of survey effort affect stock assessment performance under each recruitment condition (@tbl-sas). Survey effort was defined by the number of sampling grids covered, which directly influenced the precision of the resulting abundance index and length composition data. Catch, CPUE, and length composition data were simulated from the OM based on the population dynamics generated by the specific F and recruitment deviation time series (@fig-data). 
+We evaluated five sampling scenarios to assess how different levels of survey effort affect stock assessment performance under each recruitment condition (\Cref{tbl-sas}). Survey effort was defined by the number of sampling grids covered, which directly influenced the precision of the resulting abundance index and length composition data. Catch, CPUE, and length composition data were simulated from the OM based on the population dynamics generated by the specific F and recruitment deviation time series (\Cref{fig-data}). 
 
 ### Survey Effort Scenarios  
 The scenarios ranged from high survey effort (HSE) with 632 grids to extra low survey effort (XLSE) with only 257 grids. As expected, higher effort translated to more precise data: index CVs ranged from 15% (HSE) to 30% (XLSE), and effective sample sizes for length compositions ranged from 60 (HSE) to 15 (XLSE). The no survey effort scenario (NSE) represented a baseline case where stock assessments would rely solely on fishery-dependent data.
@@ -224,16 +268,16 @@ format_pdf_table(
 
 ### Selectivity Scenarios  
 
-Independent of survey effort, we evaluated whether the shape of survey selectivity affects assessment performance. We simulated an alternative gear configuration, producing a logistic selectivity and applied it under poor recruitment conditions at three of the survey effort levels, HSE, ISE, and LSE (@tbl-sas). CV and effective sample sizes for the selectivity scenarios were the same as their counterparts with dome-shaped selectivity (e.g. HSE-selectivity CV = HSE CV) (@tbl-sas). XLSE was not included in the selectivity comparison because this effort level represents a worst case scenario in terms of survey effort and not a likely case. 
+Independent of survey effort, we evaluated whether the shape of survey selectivity affects assessment performance. We simulated an alternative gear configuration, producing a logistic selectivity and applied it under poor recruitment conditions at three of the survey effort levels, HSE, ISE, and LSE (\Cref{tbl-sas}). CV and effective sample sizes for the selectivity scenarios were the same as their counterparts with dome-shaped selectivity (e.g. HSE-selectivity CV = HSE CV) (\Cref{tbl-sas}). XLSE was not included in the selectivity comparison because this effort level represents a worst case scenario in terms of survey effort and not a likely case. 
 
 ### Catchability Prior Sensitivity Analysis  
-Preliminary results indicated that logistic selectivity introduces confounding between estimated survey catchability ($q$) and SSB at intermediate effort. To test whether this identifiability issue could be resolved with modest external information, we re-ran the ISE-selectivity poor recruitment scenario with an informative lognormal prior on $ln(q)$, centered on the OM value with SD = 0.1. 
+Preliminary results indicated that logistic selectivity introduces confounding between estimated survey catchability ($q$) and SSB at intermediate effort. To test whether this identifiability issue could be resolved with modest external information, we re-ran the ISE-selectivity poor recruitment scenario with an informative log-normal prior on $ln(q)$, centered on the OM value with SD = 0.1. 
 
 ### Hyperstability in Fishery Data  
 For the NSE scenario under poor recruitment conditions, we incorporated hyperstability during the last 25 years for the commercial CPUE data to reflect realistic fishery behavior during population decline (NSE-hyperstable). The CPUE and catch data were modified to not fully reflect the underlying population decline, simulating the tendency of commercial fisheries to maintain catch rates even as fish abundance decreases through improved fishing efficiency, targeting behavior, or fishing in higher-density areas.  
 
 ## Estimation Model  
-The only structural difference in the EM from the OM was that for the poor recruitment condition, a recruitment regime time block was introduced for the last 15 years. Without the regime, the model was unable to fit the persistant decline in recruitment and the relative errors in outputs were over exaggerated. When fitting the model, all parameters were fixed except for $R_0$, the regime parameter for the poor recruitment scenarios, catchability for the commercial and survey fleets, and selectivity parameters for the commercial fishery and survey fleet. 
+The only structural difference in the EM from the OM was that for the poor recruitment condition, a recruitment regime time block was introduced for the last 15 years. Without the regime, the model was unable to fit the persistent decline in recruitment and the relative errors in outputs were overexaggerated. When fitting the model, all parameters were fixed except for $R_0$, the regime parameter for the poor recruitment scenarios, catchability for the commercial and survey fleets, and selectivity parameters for the commercial fishery and survey fleet. 
 
 ## Performance Indices  
 To compare the bias and precision of each sampling strategy, we compared the relative error (RE) between the OM and EM for spawning stock biomass (SSB), fishing mortality (F), age-0 recruitment, and reference points SSB/SSB~MSST~ and F/F~MSY~. Bias was described by the median relative error (MRE)  
@@ -242,4 +286,4 @@ $$
 MRE = median(\frac{EM - OM}{OM})
 $$
 
-where EM is the estimated value from the EM and OM is the true value from the OM, and precision was described by the variability in relative error across iterations. In particular, we report the bias and precision in the terminal year as this provides information on the long-term impacts of sampling effort on assessment and management abilities. We also evaluated the probability that the terminal year reference points (SSB/SSB~MSST~ and F/F~MSY~) were 10% greater or smaller than the true reference point values. We believe that managers should be cautious of estimates that fall outside of 10% of the true value.    
+where EM is the estimated value from the EM and OM is the true value from the OM, and precision was described by the variability in relative error across iterations. In particular, we report the bias and precision in the terminal year as this provides information on the long-term impacts of sampling effort on assessment and management abilities. We also evaluated the probability that the terminal year reference points (SSB/SSB~MSST~ and F/F~MSY~) were 10% greater or smaller than the true reference point values. We believe that managers should be cautious of estimates that fall outside 10% of the true value.    

@@ -1,4 +1,5 @@
-format_pdf_table <- function(data, column_names = names(data), group_rows = NULL) {
+format_pdf_table <- function(data, column_names = names(data), group_rows = NULL,
+                             float_position = NULL) {
   alignment <- c("|l", rep("r", ncol(data) - 2), "r|")
   table <- kableExtra::kbl(
     data,
@@ -21,6 +22,15 @@ format_pdf_table <- function(data, column_names = names(data), group_rows = NULL
     multicolumn <- paste0("\\multicolumn{", ncol(data), "}{l}")
     bordered_multicolumn <- paste0("\\multicolumn{", ncol(data), "}{|l|}")
     table <- gsub(multicolumn, bordered_multicolumn, table, fixed = TRUE)
+  }
+
+  if (!is.null(float_position)) {
+    table <- sub(
+      "\\begin{table}",
+      paste0("\\begin{table}[", float_position, "]"),
+      table,
+      fixed = TRUE
+    )
   }
 
   knitr::asis_output(table)

@@ -1,0 +1,3 @@
+# Declaration of Generative AI and AI-Assisted Technologies  
+
+To develop the simulation code, analyze datasets, and create final tables and figures, R scripts were generated using GitHub Copilot and Claude 3.5 Sonnet. All AI-generated code was manually audited, debugged, and verified prior to execution. During the preparation of this manuscript, the author used Claude 3.5 Sonnet to refine the grammar, structure, and academic tone of the literature review. After using this tool, the author critically reviewed, edited, and modified the suggested text. The author takes full responsibility for the final contents and accuracy of this publication.
