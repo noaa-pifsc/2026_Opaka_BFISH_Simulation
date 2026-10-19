@@ -41,6 +41,16 @@ agecomp_df <- data.frame(results.list[agecomp.ind])
 lencomp_df <- data.frame(results.list[lencomp.ind])
 index_df <- data.frame(results.list[index.ind])
 
+# scalar_df <- bind_rows(scalar_df, scalar_df1)
+# dq_df <- bind_rows(dq_df, dq_df1)
+# ts_df <- bind_rows(ts_df, ts_df1)
+# agecomp_df <- bind_rows(agecomp_df, agecomp_df1)
+# lencomp_df <- bind_rows(lencomp_df, lencomp_df1)
+# index_df <- bind_rows(index_df, index_df1)
+
+
+# write.csv(index_df, file = file.path(main.dir, "all_scens_index.csv"), row.names = FALSE)
+
 #find models that didn't converge for filtering later
 nonconverged_its <- scalar_df %>% 
     filter(max_grad > 1e-4) %>% 
@@ -63,7 +73,7 @@ results_ts <- ts_df %>%
 ts_re <- calculate_re(results_ts)
 
 #save ts_re to report folder so it can be used to make figures directly
-#write.csv(ts_re, file = "../Report/ts_re.csv", row.names = FALSE)
+#write.csv(ts_re, file = "./Report/ts_re.csv", row.names = FALSE)
 ```
 
 ### 

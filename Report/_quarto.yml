@@ -3,7 +3,7 @@ project:
   output-dir: _output
 
 book:
-  title: "Opakapaka Simulation Report"
+  title: "Optimizing Fishing Survey Sampling Effort for Hawaiian 'Ōpakapaka Stock Assessments"
   date: today
   date-format: "MMMM D, YYYY"
   author:
@@ -14,8 +14,8 @@ book:
     - chapters/01_introduction.qmd
     - chapters/02_Methods.qmd
     - chapters/03_Results.qmd
-    - chapters/06_discussion.qmd
-    - chapters/07_references.qmd
+    - chapters/04_discussion.qmd
+    - chapters/06_references.qmd
 
 bibliography: references.bib
 

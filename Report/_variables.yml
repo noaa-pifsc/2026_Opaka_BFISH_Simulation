@@ -1,7 +1,9 @@
 
 # Current Species Metadata
 species:
-  hawaiian: "'Ōpakapaka"
+  hawaiian:
+    lower: "ʻōpakapaka"
+    cap: "ʻŌpakapaka"
   common: "Crimson Jobfish"
   scientific: "*Pristipomoides filamentosus*"
 

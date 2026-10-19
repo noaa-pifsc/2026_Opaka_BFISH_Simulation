@@ -3,10 +3,13 @@
   
   \begin{tikzpicture}[remember picture, overlay]
   
-    % Background photo cropped to the cover area without distortion
-    \node[anchor=center, inner sep=0pt] at ([yshift=1in]current page.center) {%
-      \includegraphics[width=0.8\paperwidth, height=0.45\paperheight, keepaspectratio, clip]{P_filamentosus.png}%
-    };
+   % Background photo cropped to the cover area without distortion
+   \node[anchor=center, inner sep=0pt] at ([yshift=1in]current page.center) {%
+     \pdftooltip{%
+       \includegraphics[width=0.8\paperwidth, height=0.45\paperheight,
+       keepaspectratio, clip]{P_filamentosus.png}%
+     }{Illustration of an 'opakapaka, or pink snapper (Pristipomoides filamentosus).}%
+   };
     
    % NOAA logo - top left corner, full bleed
     \node[anchor=north west, inner sep=0pt] at (current page.north west) {%
@@ -106,8 +109,10 @@ Pacific Islands Fisheries Science Center
 \vspace{0.25cm}
 
 {\fontspec{Arial}\fontsize{12pt}{14pt}\selectfont Edited by --------------.\par}
-\vspace{0.5cm}
+\vspace{0.25cm}
 
+{\fontspec{Arial}\fontsize{12pt}{14pt}\selectfont To develop the simulation code, analyze datasets, and create final tables and figures, R scripts were generated using GitHub Copilot and Claude 3.5 Sonnet. All AI-generated code was manually audited, debugged, and verified prior to execution. During the preparation of this manuscript, the author used Claude 3.5 Sonnet to refine the grammar, structure, and academic tone of the literature review. After using this tool, the author critically reviewed, edited, and modified the suggested text. The author takes full responsibility for the final contents and accuracy of this publication. \par}
+\vspace{0.5cm}
 
 {\fontspec{Arial Bold}\fontsize{14pt}{16pt}\selectfont Recommended citation\par}
 \vspace{0.25cm}
