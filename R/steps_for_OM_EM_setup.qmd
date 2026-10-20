@@ -310,6 +310,7 @@ load(file.path(main.dir, "Inputs", "constantF_mat.RData"))
 library(fs)
 
 scen <- "IRFSelex_poorrec"
+load(file.path(main.dir, "good_its.RData"))
 nyears_fwd <- 25
 niter <- 100
 scen_dirs <- file.path(
@@ -318,8 +319,11 @@ scen_dirs <- file.path(
     good_its_100
 )
 sapply(scen_dirs, dir.create, recursive = T)
-# file.copy(from = file.path(main.dir, "Inputs", "recdevs_mat.RData"), file.path(scen_dirs, "recdevs_mat.RData"))
-file.copy(from = file.path(main.dir, "Inputs", "poor_recdevs_mat.RData"), file.path(scen_dirs, "poor_recdevs_mat.RData"))
+
+if(grepl("poorrec", scen)){
+    file.copy(from = file.path(main.dir, "Inputs", "poor_recdevs_mat.RData"), file.path(scen_dirs, "poor_recdevs_mat.RData"))
+}
+
 file.copy(
     from = file.path(main.dir, "Inputs", "setseed.csv"),
     file.path(scen_dirs, "setseed.csv")
@@ -356,11 +360,14 @@ for (i in 1:length(scen_dirs)) {
         scen_dirs[i]
     )
 }
+
 # only for FRS_only_poorrec_25_yrfwd scenario (testing hyperstablity)
-# for(i in 1:length(scen_dirs)){
-#     file.copy(from = file.path(main.dir, "FRSonly_SQ_25_yrfwd", i, "em", "ss3.dat"),
-#     to = file.path(scen_dirs[i], "normal_rec.dat"))
-# }
+if(scen == "FRSonly_poorrec"){
+    for(i in 1:length(scen_dirs)){
+        file.copy(from = file.path(main.dir, "FRSonly_SQ_25_yrfwd", i, "em", "ss3.dat"),
+        to = file.path(scen_dirs[i], "normal_rec.dat"))
+    }
+}
 
 for (i in 1:length(scen_dirs)) {
     shell(paste0("powershell cd ", scen_dirs[i], ";tar -czf start.tar.gz ./*"))
@@ -449,7 +456,7 @@ for (i in 1:length(all_scenario_names)) {
 get_results_all(
     overwrite_files = T,
     user_scenarios = all_scenario_names,
-    filename_prefix = "all_scens" #all_scens
+    filename_prefix = "all_scens" 
 )
 get_fits_all(
     overwrite_files = T,
@@ -462,25 +469,7 @@ get_fits_all(
 ### Checking results
 
 ```{r}
-
-
-all_scens_files <- list.files(
-  main.dir,
-  pattern = "^all_scens_.*\\.csv$",
-  full.names = TRUE
-)
-
-
-for (all_scens_file in all_scens_files) {
-  file_type <- sub("^all_scens_", "", basename(all_scens_file))
-
-    distinct_df <- distinct_all(
-      read.csv(all_scens_file)
-    )
-
-    write.csv(distinct_df, all_scens_file, row.names = FALSE)
- 
-}
+#| eval: false 
 
 
 reps <- SSgetoutput(
@@ -516,11 +505,6 @@ reps <- SSgetoutput(
         file.path(main.dir, "IRF_poorrec_selex_age", "10_poorrec_cv_18", "em"),
         file.path(main.dir, "IRF_poorrec_selex_age", "10_poorrec_cv_15", "em"),
         file.path(main.dir, "IRF_poorrec_selex_age", "10_poorrec_noerror", "em")
-        # file.path(main.dir, "IRF_poorrec_selex_age", "1_poorrec_cv_18_effN_45", "om"),
-        # file.path(main.dir, "IRF_poorrec_selex_age", "1_poorrec_cv_18_effN_45", "em"),
-        # file.path(main.dir, "IRF_poorrec_selex_age", "1_poorrec_cv_18_effN_45_ageN_60", "em")
-        # file.path(main.dir, "IRF_poorrec_selex_age", "1_cv_18_effN_45_ageN_60", "em"),
-        # file.path(main.dir, "IRF_poorrec_selex_age", "1_cv_18_effN_45_ageN_45", "em")
     )
 )
 
@@ -558,70 +542,6 @@ rep <- SS_output(file.path(
 ))
 SS_plots(rep)
 
-ts_re %>%
-    filter(year <= 2048 & iteration != 24) %>%
-    group_by(scenario, year) %>%
-    summarise(
-        med_re = mean(SpawnBio_re),
-        uci = quantile(SpawnBio_re, .975),
-        lci = quantile(SpawnBio_re, .05)
-    ) %>%
-    separate(
-        col = scenario,
-        into = c("scen", "Rec_scenario", "25", "Yrs"),
-        sep = "_",
-        remove = F
-    ) %>%
-    ggplot() +
-    geom_hline(yintercept = 0, color = "grey60") +
-    geom_ribbon(
-        aes(x = year, ymin = lci, ymax = uci, fill = scenario),
-        alpha = .25
-    ) +
-    geom_line(aes(x = year, y = med_re, color = scenario), linewidth = 1.2) +
-    facet_wrap(~Rec_scenario) +
-    labs(x = "Year", y = "SSB MRE") +
-    theme_bw()
-
-
-good_its <- ts_re %>%
-    filter(year == 2000 & SpawnBio_re < .05 & SpawnBio_re > -0.5) %>%
-    select(iteration, scenario) %>%
-    filter(scenario == "HRF_poorrec_25_yrfwd") %>%
-    pull(iteration)
-
-high_threshold <- 0.20  # e.g., EM is at least 20% higher than OM
-
-consistently_high <- ts_re %>%
-  filter(!is.na(SpawnBio_re)) %>%
-  group_by(scenario, iteration) %>%
-  summarise(
-    mean_re = mean(SpawnBio_re),
-    pct_years_high = mean(SpawnBio_re > 0.10),
-    .groups = "drop"
-  ) %>%
-  filter(pct_years_high >= 0.25) %>%  # high in at least 90% of years
-  arrange(desc(mean_re))
-
-head(consistently_high)
-
-consistently_high %>% 
-group_by(scenario, iteration) %>%
-summarise(n = nrow(.))
-
-consistently_high %>%
-  count(scenario, name = "n_consistently_high_iterations")
-
-x <- 0:90
-x_50 <- 19.533
-x_95 <- 0.19518
-y_50 <- 19.6765
-y_95 <- 1.01024
-om_sel <- 1/(1+exp(-log(19)*(x-x_50)/x_95-x_50))
-em_sel <- 1/(1+exp(-log(19)*(x-y_50)/y_95-y_50))
-
-plot(x = x, y = om_sel, type = "l", col = "blue")
-lines(x = x, y = em_sel, col = "red")
 ```
 
 Questions from Punt et al. 2021 to think about for this project: 1. How does the ability to estimate quantities of management interest change with average annual (effective) sample sizes for length-comp and conditional age-length data? 2. Does including data sources with small sample sizes in an assessment lead to bias? 3. What are the implications of collecting length and age samples at intervals greater than one year but large sample sizes? 4. How does the assessment performance change if sampling is unbalanced over time and space? Questions from Ono et al. 2015 1. What is the value of age vs length composition data? 2. What is the influence of age composition collection frequency and duration? 3. What is the influence of frequency and duration of survey composition data? 4. What is the impact of historical fishery composition data? 5. What is the impact of composition data sample size? 6. Which fishing pattern produces the most informative data?
@@ -631,6 +551,8 @@ Questions from Punt et al. 2021 to think about for this project: 1. How does the
 To profile over an F value for a given year, use the following code:
 
 ```{r}
+#| eval: false
+
 em_I <- "SQ_0_yrfwd"
 Iteration <- 5
 nyears <- 75
@@ -772,101 +694,5 @@ for (i in 1:length(fvec)) {
     )
 }
 
-
-```
-
-```{r}
-#em_I <- paste0("em_", n_yrs_fwd)
-em_I <- "HRFhyperstable_15_yrfwd"
-Iteration <- 1
-like_dir <- file.path(main.dir, em_I, Iteration, "em", "likelihood_prof")
-dir.create(like_dir)
-files <- c(
-    "ss3.dat",
-    "control.ss_new",
-    "starter.ss",
-    "forecast.ss",
-    "ss.par",
-    "ss3.exe"
-)
-file.copy(
-    from = file.path(main.dir, em_I, Iteration, "em", files),
-    to = like_dir,
-    overwrite = T
-)
-CTL <- SS_readctl_3.30(
-    file = file.path(like_dir, "control.ss_new"),
-    datlist = file.path(like_dir, "ss3.dat")
-)
-CTL <- SS_readctl_3.30(
-    file = file.path(main.dir, em_I, Iteration, "em", "control.ss_new"),
-    datlist = file.path(main.dir, em_I, Iteration, "em", "ss3.dat")
-)
-# r0 <- CTL$SR_parms$INIT[1]
-# r0_vec <- seq(r0 - 1, r0 + 1, by = 0.2)
-CTL$F_setup2
-
-par.file <- SS_readpar_3.30(
-    parfile = file.path(like_dir, "ss.par"),
-    datsource = file.path(like_dir, "ss3.dat"),
-    ctlsource = file.path(like_dir, "control.ss_new")
-)
-F_term <- par.file$F_rate %>% filter(fleet == 1 & year == nyears) %>% pull(F)
-F_term_vec <- seq(F_term - .01, F_term + 0.1, by = 0.005)
-
-START <- SS_readstarter(
-    file = file.path(like_dir, "starter.ss"),
-    verbose = FALSE
-)
-START$prior_like <- 1
-START$ctlfile <- "control_modified.ss"
-START$init_values_src <- 1
-SS_writestarter(START, dir = like_dir, overwrite = TRUE, verbose = F)
-
-likes <- profile_F(
-    dir = like_dir,
-    newctlfile = "control_modified.ss",
-    linenum = nyears,
-    #string = "Fvalue",
-    profilevec = F_term_vec[10:20],
-    usepar = T,
-    parstring = "# F_rate[90]:",
-    exe = "ss3",
-    verbose = FALSE,
-    extras = "-nohess -nox"
-)
-
-
-likes <- profile(
-    dir = like_dir,
-    newctlfile = "control_modified.ss",
-    linenum = 241,
-    #string = "Fvalue",
-    profilevec = F_term_vec,
-    usepar = T,
-    parstring = "# F_rate[90]:",
-    exe = "ss3",
-    verbose = FALSE,
-    extras = "-nohess -nox"
-)
-
-profile_mods <- SSgetoutput(dirvec = like_dir, keyvec = c(1:5, 7, 10))
-profile_mods_sum <- SSsummarize(profile_mods)
-profile_mods_sum$maxgrad <= 1e-4
-
-SSplotProfile(
-    profile_mods_sum,
-    profile.string = "SR_LN",
-    profile.label = "SR_LN(R0)",
-    print = TRUE,
-    plotdir = like_dir,
-)
-PinerPlot(
-    profile_mods_sum,
-    component = "Length_like",
-    print = TRUE,
-    plotdir = like_dir
-)
-PinerPlot(profile_mods_sum, component = "Surv_like")
 
 ```

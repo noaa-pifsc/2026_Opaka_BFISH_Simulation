@@ -15,7 +15,7 @@ book:
     - chapters/02_Methods.qmd
     - chapters/03_Results.qmd
     - chapters/04_discussion.qmd
-    - chapters/06_references.qmd
+    - chapters/05_references.qmd
 
 bibliography: references.bib
 

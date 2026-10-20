@@ -23,8 +23,8 @@ nyears_fwd <- 25
 scen <- "IRFSelex_SQ"
 
 #Template OM and EM files
-om_dir <- paste0("opaka-om-", nyears_fwd, "_FRSlencomp_selex")
-em_dir <- paste0("opaka-em-", nyears_fwd, "_FRSlencomp_selex")
+om_dir <- paste0("opaka-om-", nyears_fwd, "-selex")
+em_dir <- paste0("opaka-em-", nyears_fwd, "-selex")
 
 #Get iteration number
 I <- as.numeric(tail(strsplit(args[1], "/")[[1]], n = 1))
@@ -42,8 +42,8 @@ index <- list(
     fleets = c(1, 3), 
     years = list(seq(1949, 2023, by = 1), seq(2017, 2048, by = 1)),
     seas = list(7,1), 
-    sds_obs = list(0.02, sas[which(sas$N_years == nyears_fwd), "Resfish_index_CV"]),
-    sds_out = list(0.203, sas[which(sas$N_years == nyears_fwd), "Resfish_index_CV"]) 
+    sds_obs = list(0.20, sas[which(sas$N_years == nyears_fwd), "Resfish_index_CV"]),
+    sds_out = list(0.20, sas[which(sas$N_years == nyears_fwd), "Resfish_index_CV"]) 
 )
 
 lcomp <- list(
@@ -53,11 +53,7 @@ lcomp <- list(
     years = list(seq(1949, 2023), seq(2017, 2048, by = 1))
 )
 
-acomp <- list(
-    fleets = 3, Nsamp = list(rep(40, 32)), years = list(seq(2017, 2048))
-)
-
-seed <- set.seed[I,2]
+seed <- set.seed[I,3]
 
 ss3sim_base(
     iterations = I,
@@ -65,7 +61,6 @@ ss3sim_base(
     f_params = F_list,
     index_params = index,
     lcomp_params = lcomp,
-    agecomp_params = acomp,
     om_dir = om_dir,
     em_dir = em_dir,
     user_recdevs = NULL,

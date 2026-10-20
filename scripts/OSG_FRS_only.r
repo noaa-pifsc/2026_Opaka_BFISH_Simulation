@@ -18,7 +18,7 @@ load("constantF_mat.RData")
 #Variables
 nyears <- 100
 nyears_fwd <- 25
-scen <- "FRSonly_poorrec"
+scen <- "FRSonly_SQ"
 
 #Template OM and EM files
 om_dir <- paste0("opaka-om-", nyears_fwd, "-FRS-only", "/")

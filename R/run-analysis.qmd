@@ -1,0 +1,133 @@
+---
+title: "Steps for running the analysis"
+format: html
+execute:
+    enabled: false
+---
+
+To reproduce the results from this simulation, run the following steps. All model runs were run on the Open Science Grid (OSG), and an account is necessary use it. For a complete guide on how to get started with OSG see their [website](https://portal.osg-htc.org/documentation/) or this [tutorial](https://moshima-pifsc.github.io/NSASS-HTC-HPC-Computing/assets/osg_documentation.html).
+
+## 1. Build and publish the software container
+
+Build the container once before submitting jobs. Use two PowerShell windows: the first is connected to the OSG access point and the second remains on your local computer in the repository root. The image is copied to the OSG data federation so HTCondor jobs can use it through `osdf:///ospool/ap41/data/meg_oshima/linux-r4ss-v10.sif`.
+
+In the first PowerShell window, connect to OSG and create a build directory:
+
+```{bash}
+ssh meg_oshima@ap41.uw.osg-htc.org
+mkdir -p /home/meg_oshima/singularity/linux_r4ss
+```
+
+In the second, local PowerShell window, upload the definition file from this repository:
+
+```{bash}
+scp osg_container/linux-r4ss-v2.def meg_oshima@ap41.uw.osg-htc.org:/home/meg_oshima/singularity/linux_r4ss/
+```
+
+Back on the OSG access point, build `linux-r4ss-v10.sif`, then publish it to the data directory used by the submit files.
+
+```{bash}
+cd /home/meg_oshima/singularity/linux_r4ss
+apptainer build linux-r4ss-v10.sif linux-r4ss-v2.def
+mkdir -p /ospool/ap41/data/meg_oshima
+cp linux-r4ss-v10.sif /ospool/ap41/data/meg_oshima/
+ls -lh /ospool/ap41/data/meg_oshima/linux-r4ss-v10.sif
+```
+
+When changing the definition file, build and publish a newly versioned `.sif` filename, then update the `+SingularityImage` path in the relevant HTCondor submit file. OSG caches images by filename. Verify the container works by running the following commands and checking the package versions of r4ss and ss3sim: 
+
+```{bash}
+apptainer shell /ospool/ap41/data/meg_oshima/linux-r4ss-v10.sif
+R 
+utils::packageVersion("r4ss") #‘1.46.1’
+utils::packageVersion("ss3sim") #‘1.21.0’
+q()
+exit #to exit apptainer 
+```
+
+## 2. Prepare and submit a scenario
+
+See `steps_for_OM_EM_setup.qmd` for how recruitment deviation and F matrices were created for the OMs. Run the code through `Create the directories for OSG and target_dir.txt` section to create inputs and scenario directories. The local `Inputs` directory should contain: 
+
+*   poor_recdevs_mat.RData
+*   recdevs_mat.RData
+*   setseed.csv
+*   sas.csv  
+*   effN.csv
+*   constantF_mat.RData  
+
+Choose the row matching the scenario directory you created. Use its preparation script and HTCondor submit file together; the submit file automatically transfers the corresponding R calculation script.
+
+| Scenario directory | Preparation script | HTCondor submit file | Calculation script |
+|---|---|---|---|
+| `FRSonly_SQ_25_yrfwd` | `osg-prep_FRS.sh` | `condor_create_OMEM_FRS.sub` | `OSG_FRS_only.r` |
+| `FRSonly_poorrec_25_yrfwd` | `osg-prep_FRS_poorrec.sh` | `condor_create_OMEM_FRS_poorrec.sub` | `OSG_FRS_only_poorrec.r` |
+| `HRF_SQ_25_yrfwd` | `osg-prep-HRF-SQ.sh` | `condor_create_OMEM_HRF_SQ.sub` | `OSG_HRF_SQ.r` |
+| `HRF_poorrec_25_yrfwd` | `osg-prep-HRF-poorrec.sh` | `condor_create_OMEM_HRF_poorrec.sub` | `OSG_HRF_poorrec.r` |
+| `HRFSelex_SQ_25_yrfwd` | `osg-prep-HRF-Selex_SQ.sh` | `condor_create_OMEM_HRF_Selex_SQ.sub` | `OSG_HRF_Selex_SQ.r` |
+| `HRFSelex_poorrec_25_yrfwd` | `osg-prep-HRF-Selex_poorrec.sh` | `condor_create_OMEM_HRFSelex_poorrec.sub` | `OSG_HRF_Selex_poorrec.r` |
+| `IRF_SQ_25_yrfwd` | `osg-prep-IRF-SQ.sh` | `condor_create_OMEM_IRF_SQ.sub` | `OSG_IRF_SQ.r` |
+| `IRF_poorrec_25_yrfwd` | `osg-prep-IRF-poorrec.sh` | `condor_create_OMEM_IRF_poorrec.sub` | `OSG_IRF_poorrec.r` |
+| `IRFSelex_SQ_25_yrfwd` | `osg-prep-IRF-Selex_SQ.sh` | `condor_create_OMEM_IRF_Selex_SQ.sub` | `OSG_IRF_Selex_SQ.r` |
+| `IRFSelex_poorrec_25_yrfwd` | `osg-prep-IRF-Selex_poorrec.sh` | `condor_create_OMEM_IRF_Selex_poorrec.sub` | `OSG_IRF_Selex_poorrec.r` |
+| `IRFSelex_poorrec_qprior_25_yrfwd` | `osg-prep-IRF-Selex_poorrec_qprior.sh` | `condor_create_OMEM_IRF_Selex_poorrec_qprior.sub` | `OSG_IRF_Selex_poorrec_qprior.r` |
+| `LRF_SQ_25_yrfwd` | `osg-prep-LRF-SQ.sh` | `condor_create_OMEM_LRF_SQ.sub` | `OSG_LRF_SQ.r` |
+| `LRF_poorrec_25_yrfwd` | `osg-prep-LRF-poorrec.sh` | `condor_create_OMEM_LRF_poorrec.sub` | `OSG_LRF_poorrec.r` |
+| `LRFSelex_SQ_25_yrfwd` | `osg-prep-LRF-Selex_SQ.sh` | `condor_create_OMEM_LRF_Selex_SQ.sub` | `OSG_LRF_Selex_SQ.r` |
+| `LRFSelex_poorrec_25_yrfwd` | `osg-prep-LRF-Selex_poorrec.sh` | `condor_create_OMEM_LRFSelex_poorrec.sub` | `OSG_LRF_Selex_poorrec.r` |
+| `XLRF_SQ_25_yrfwd` | `osg-prep-XLRF-SQ.sh` | `condor_create_OMEM_XLRF_SQ.sub` | `OSG_XLRF_SQ.r` |
+| `XLRF_poorrec_25_yrfwd` | `osg-prep-XLRF-poorrec.sh` | `condor_create_OMEM_XLRF_poorrec.sub` | `OSG_XLRF_poorrec.r` |
+
+Also prepare the `scripts` directory to be uploaded to OSG. 
+```{r}
+shell(paste0(
+    "powershell cd ",
+    main.dir,
+    ";tar -czf scripts.tar.gz ",
+    "scripts"
+))
+```
+
+Log in to OSG in a new powershell window. 
+```{bash}
+#log in to OSG in powershell
+ssh meg_oshima@ap41.uw.osg-htc.org
+# put in password when prompted
+```
+
+Then in a second powershell window, upload your files.
+```{bash}
+# sceneario folder
+scp upload.HRF_poorrec_25_yrfwd.tar.gz meg_oshima@ap41.uw.osg-htc.org:/home/meg_oshima/ 
+# scripts 
+scp scripts.tar.gz meg_oshima@ap41.uw.osg-htc.org:/home/meg_oshima/ 
+```
+
+In the active OSG window, untar the scenario and scripts directory and prepare the scripts for the job. Then submit the job. 
+```{bash}
+tar -xzf scripts.tar.gz
+chmod 777 scripts/osg-prep-HRF-poorrec.sh
+tar -xzf upload.HRF_poorrec_25_yrfwd.tar.gz HRF_poorrec_25_yrfwd
+./scripts/osg-prep-HRF-poorrec.sh
+condor_submit scripts/condor_create_OMEM_HRF_poorrec.sub
+```
+
+To monitor the progress of a job run `condor_q` in the active OSG window. If a job completes very quickly, or is stuck on `held` status, you can check the job_*.log and job_*.err files which are found inside each respective iterations directory (e.g. `HRF_poorrec_25_yrfwd/1/`). When a job has finished there should be an `End.tar.gz` file in each iteration directory. 
+## 3. Retrieve results  
+
+Once the job has finished successfully, tar the scenario directory in the active OSG window and in the second powershell window, download the results.
+```{bash}
+tar -czf download.HRF_poorrec_25_yrfwd.tar.gz HRF_poorrec_25_yrfwd
+# Download results 
+scp meg_oshima@ap41.uw.osg-htc.org:/home/meg_oshima/download.HRF_poorrec_25_yrfwd.tar.gz ./download.HRF_poorrec_25_yrfwd.tar.gz
+
+```
+
+To unpack results return to `steps_for_OM_EM_setup.qmd` and run the code in `Getting results` section. To quickly visualize the results, run `./R/output_dashboard.qmd`.  
+
+## 4. Create tech memo    
+
+To generate the report, ensure the working directory is to the root directory and then run 
+```{r}
+quarto::quarto_render("Report", output_format = "pdf", quiet = FALSE)
+```
