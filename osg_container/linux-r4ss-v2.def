@@ -1,0 +1,84 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    TZ=Etc/UTC
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime
+    echo $TZ > /etc/timezone
+
+    apt-get update -y
+    apt-get install -y \
+        tzdata \
+        curl \
+        ca-certificates \
+        dos2unix \
+        build-essential \
+        cmake \
+        g++ \
+        libssl-dev \
+        libssh2-1-dev \
+        libcurl4-openssl-dev \
+        libfontconfig1-dev \
+        libxml2-dev \
+        libgit2-dev \
+        libharfbuzz-dev \
+        libfribidi-dev \
+        libfreetype6-dev \
+        libpng-dev \
+        libtiff5-dev \
+        libjpeg-dev \
+        libuv1-dev \
+        wget \
+        tar \
+        coreutils \
+        gzip \
+        findutils \
+        sed \
+        gdebi-core \
+        locales \
+        nano
+
+    locale-gen en_US.UTF-8
+
+    # ---- Install R ----
+    export R_VERSION=4.4.0
+    curl -O https://cdn.rstudio.com/r/ubuntu-2004/pkgs/r-${R_VERSION}_1_amd64.deb
+    gdebi -n r-${R_VERSION}_1_amd64.deb
+    rm -f r-${R_VERSION}_1_amd64.deb
+
+    ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R
+    ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript
+
+    # ---- Use Posit Package Manager for pre-compiled binary R packages ----
+    # This avoids compiling textshaping/systemfonts/fs/etc from source and
+    # skips the need for libharfbuzz-dev, libfribidi-dev, libuv1-dev, etc.
+    # "focal" must match the Ubuntu base image (20.04 = focal).
+    RSPM_REPO="https://packagemanager.posit.co/cran/__linux__/focal/latest"
+
+    R -e "options(repos = c(CRAN = '${RSPM_REPO}')); install.packages(c('remotes','dplyr','magrittr'))"
+    R -e "options(repos = c(CRAN = '${RSPM_REPO}')); remotes::install_github('r4ss/r4ss', ref = '37b89fe4046fd271fa76548779e36b22276a0910')"
+    R -e "options(repos = c(CRAN = '${RSPM_REPO}')); remotes::install_github('ss3sim/ss3sim@202b590', upgrade = 'never')"
+
+    # ---- Fetch Stock Synthesis executable ----
+    NOW=`date`
+    echo "export build_date='${NOW}'" >> $SINGULARITY_ENVIRONMENT
+
+    mkdir -p /ss_exe
+    curl -L -o /ss_exe/ss_linux https://github.com/nmfs-ost/ss3-source-code/releases/download/v3.30.19.01/ss_linux
+    chmod 755 /ss_exe/ss_linux
+
+    # ---- Cleanup ----
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+%environment
+    export PATH='/ss_exe:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
+%labels
+    Author nicholas.ducharme-barth@noaa.gov
+    Version v0.0.5
+
+%help
+    This is a Linux (Ubuntu 20.04) container containing Stock Synthesis (version 3.30.19.01), R (version 4.4.0) and the R packages r4ss (version 1.46.1 for compatibility with ss3sim), ss3sim, dplyr, and magrittr.
+    R packages are installed from pre-compiled binaries via Posit Package Manager (packagemanager.posit.co) for faster, more reliable builds.

@@ -15,7 +15,7 @@ set.seed <- read.csv(file.path(main.dir, "Inputs", "setseed.csv"))
 sas_full <- read.csv(file.path(main.dir, "Inputs", "sas.csv"))
 niter <- 200
 F_df <- read.csv(file.path(main.dir, "Inputs", "F_df.csv"))
-load("Inputs/constantF_mat.Rdata")
+load("Inputs/constantF_mat.RData")
 ```
 
 ## Recreating the recruitment calculations from SS
@@ -309,7 +309,7 @@ load(file.path(main.dir, "Inputs", "constantF_mat.RData"))
 #| label: create-scenario-tar-for-upload
 library(fs)
 
-scen <- "IRFSelex_poorrec"
+scen <- "HRF_poorrec"
 load(file.path(main.dir, "good_its.RData"))
 nyears_fwd <- 25
 niter <- 100
@@ -341,13 +341,13 @@ file.copy(
     file.path(scen_dirs, "effN.csv")
 )
 
-
+# Make sure to change the model directory name to match your scenario
 for (i in 1:length(scen_dirs)) {
     fs::dir_copy(
         file.path(
             main.dir,
             "models",
-            paste0("opaka-om-", nyears_fwd, "-selex")
+            paste0("opaka-om-", nyears_fwd, "-r0trend")
         ),
         scen_dirs[i]
     ) #"-FRS-only" #, "-selex" , "-r0trend", "_FRSlencomp"
@@ -355,7 +355,7 @@ for (i in 1:length(scen_dirs)) {
         file.path(
             main.dir,
             "models",
-            paste0("opaka-em-", nyears_fwd, "-selex")
+            paste0("opaka-em-", nyears_fwd, "-r0trend")
         ),
         scen_dirs[i]
     )
@@ -415,7 +415,7 @@ for (i in 1:length(all_scenario_names)) {
     if (
         file.exists(file.path(
             main.dir,
-            paste0("download.", all_scenario_names[i], ".tar.gz ")
+            paste0("download.", all_scenario_names[i], ".tar.gz")
         ))
     ) {
         shell(paste0(

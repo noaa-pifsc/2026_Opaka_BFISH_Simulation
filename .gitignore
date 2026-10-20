@@ -7,19 +7,14 @@
 #track directories so can recurse into them
 !*/ 
 ## track SS input files filetypes
-!models/03-simplified-mod
-!models/opaka-em/*
-!models/opaka-om/* 
-!models/opaka-om-5/*
-!models/opaka-em-5/*
-!models/opaka-om-15/*
-!models/opaka-em-15/*
-!models/opaka-om-25/*
-!models/opaka-em-25/*
-!models/opaka-om-50/*
-!models/opaka-em-50/*
-!models/opaka-em-25-R0_trend/*
-!models/opaka-om-25-R0_trend/*
+!models/opaka-om-25-FRS-only/**
+!models/opaka-em-25-FRS-only/**
+!models/opaka-om-25-r0trend/**
+!models/opaka-em-25-r0trend/**
+!models/opaka-om-25-selex/**
+!models/opaka-em-25-selex/**
+!models/opaka-om-25_FRSlencomp/**
+!models/opaka-em-25_FRSlencomp/**
 !bin/*
 !*/*data.ss
 !*/*data_boot*.ss
@@ -29,14 +24,23 @@
 !*/starter.ss
 ## track code and inputs
 !R/*
+!scripts/*.sh
+!scripts/*.sub
 !*.r
 !*.R
 !Inputs/*
 !*.qmd
+!osg_container/*.def
+!good_its.RData
+!constantF_mat.RData
+# Generated simulation results remain ignored; archive them outside Git.
 *.sif
 !Report/*
+!Report/_extensions/**
 # renv files
+!renv/activate.R
 !renv/settings.json
 !renv.lock
 !.Rprofile
+!Opaka_simulation.Rproj
 
