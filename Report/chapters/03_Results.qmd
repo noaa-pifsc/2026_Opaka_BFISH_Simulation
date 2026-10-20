@@ -20,6 +20,7 @@ source("../table_style.R")
 #| message: false
 #| warning: false
 #| fig-cap: "Time series of median (solid line) and 95% quantile (band) relative error of spawing stock biomass for the high (HSE), intermediate (ISE), low (LSE), extra low (XLSE), and no survey effort (NSE) scenarios under both the normal and poor recruitment conditions."
+#| fig-alt: "Two-panel line chart of spawning-stock-biomass relative error from 2025 to 2048. Errors are generally small and stable under normal recruitment, while poor recruitment produces increasingly positive errors, especially for the no-survey scenario, which rises to nearly 1.0."
 
 ts_re %>%
 filter(
@@ -64,15 +65,16 @@ stockplotr::theme_noaa() +
 
 ```
 
-Under normal recruitment, fishing mortality exhibited similar bias and precision across all effort scenarios in the terminal year, though estimates were consistently lower than true values (\Cref{tbl-re-term-yr}). Terminal-year $F$ MRE ranged from –2.4% ($SD = 0.151$) to –3.3% ($SD = 0.103$). Notably, while the XLSE scenario showed a slightly lower bias, it also demonstrated the lowest precision. Conversely, the HSE scenario, despite having slightly higher bias, offered superior precision. The marginal 1% increase in bias in the HSE is a negligible trade-off for the gain in precision and may simply be a simulation artifact. Consistent with SSB patterns precision for $F$ over the final 25 years declined as sampling effort decreased for scenarios with surveys (\Cref{fig-Fmre}). The 95% error interval for the XLSE scenario [–23%, 31%] was wider than the more constrained [–18%, 18%] range of the HSE.
+Under normal recruitment, fishing mortality exhibited similar bias and precision across all effort scenarios in the terminal year, though estimates were consistently lower than true values (\Cref{tbl-re-term-yr}). Terminal-year $F$ MRE ranged from –2.4% ($SD = 0.151$) to –3.3% ($SD = 0.103$). Notably, while the XLSE scenario showed a slightly lower bias, it also demonstrated the lowest precision. Conversely, the HSE scenario, despite having slightly higher bias, offered superior precision. The marginal 1% increase in bias in the HSE is a negligible trade-off for the gain in precision and may simply be a simulation artifact. Consistent with SSB patterns, precision for $F$ over the final 25 years declined as sampling effort decreased for scenarios with surveys (\Cref{fig-Fmre}). The 95% error interval for the XLSE scenario [–23%, 31%] was wider than the more constrained [–18%, 18%] range of the HSE.
 
-Under poor recruitment conditions, estimates of $F$ were less accurate than under recruitment (\Cref{fig-Fmre}). MRE for $F$ ranged from 1.2% ($SD = 0.206$) in NSE-hyperstable to –12.2% ($SD = 0.162$) in the XLSE (\Cref{tbl-re-term-yr}). Interestingly, while the NSE-hyperstable scenario yielded the lowest bias for $F$ over the final decade, it was characterized by much higher variability throughout the projection period ($SD = 0.206$), making the estimates less reliable for consistent management.
+Under poor recruitment conditions, estimates of $F$ were less accurate than under normal recruitment (\Cref{fig-Fmre}). MRE for $F$ ranged from 1.2% ($SD = 0.206$) in NSE-hyperstable to –12.2% ($SD = 0.162$) in the XLSE (\Cref{tbl-re-term-yr}). Interestingly, while the NSE-hyperstable scenario yielded the lowest bias for $F$ over the final decade, it was characterized by much higher variability throughout the projection period ($SD = 0.206$), making the estimates less reliable for consistent management.
  
 ```{r}
 #| label: fig-Fmre
 #| message: false
 #| warning: false
 #| fig-cap: "Time series of median (solid line) and 95% interval (band) relative error of fishing mortality for the high (HSE), intermediate (ISE), low (LSE), extra low (XLSE), and no survey effort (NSE) scenarios under both the normal and poor recruitment conditions."
+#| fig-alt: "Two-panel line chart of fishing-mortality relative error from 2025 to 2048. Errors remain relatively stable under normal recruitment; under poor recruitment, the no-survey scenario shows the widest uncertainty and the largest positive errors."
 
 ts_re %>%
 filter(year <= 2048 & !str_detect(scenario, "Selex" )) %>%
@@ -123,6 +125,7 @@ Under poor recruitment conditions, age-0 recruitment was estimated with similar 
 #| message: false
 #| warning: false
 #| fig-cap: "Time series of median (solid line) and 95% interval (band) relative error of age-0 recruitment for the high (HSE), intermediate (ISE), low (LSE), extra low (XLSE), and no survey effort (NSE) scenarios under both the normal and poor recruitment conditions."
+#| fig-alt: "Two-panel line chart of age-0 recruitment relative error from 2025 to 2048. Under normal recruitment, errors become highly variable near the end of the period, with one scenario reaching about 4. Under poor recruitment, errors remain lower and more stable."
 
 ts_re %>%
 filter(year <= 2048 & !str_detect(scenario, "Selex" )) %>%
@@ -228,6 +231,7 @@ Lastly, the reliability of key reference point estimates remained consistent acr
 #| warning: false
 #| label: fig-refpoints
 #| fig-cap: Distribution of relative error for the terminal year stock status (SSB/SSB~MSST~) and terminal year fishing status (F/F~MSY~). 
+#| fig-alt: "Four-panel violin plot comparing terminal stock and fishing-status error across five model scenarios. Under normal recruitment, distributions cluster near zero. Under poor recruitment, the FRS-only scenario has notably larger and more variable stock-status error, while fishing-status errors are generally negative across scenarios."
 
 ref_pt_re <- read.csv("../ref_pt_re.csv")
 
@@ -368,6 +372,8 @@ Independent of survey effort, changing the research survey gear to produce logis
 ```{r}
 #| label: fig-selectivity-comparison
 #| fig-cap: "Median relative error of terminal year spawning stock biomass for the high (HSE), intermediate (ISE), and low (LSE) scenarios with dome-shaped (red bars), logistic selectivity (blue bars), and logistic selectivity with an informative prior on q (green bar)."
+#| fig-alt: "Two-panel bar chart of terminal spawning-stock-biomass error. Errors are lower under normal recruitment than poor recruitment. Under poor recruitment, the informative-q-prior model has the lowest error for intermediate survey effort; logistic selectivity produces the highest errors for intermediate and low effort."
+
 ts_re %>%
 filter(
   year == 2048 & 
@@ -402,7 +408,7 @@ summarise(med_re = quantile((SpawnBio_re), 0.5, na.rm = TRUE)) %>%
 ```
 
 
-This effort-dependent pattern was traced to the confounding of survey catchability and SSB: across all scenarios, terminal-year SSB relative error was strongly correlated with $q$ relative error (Pearson correlation coefficient = 0.71–0.89), consistent with the known identifiability issue between $q$ and an asymptotic selectivity curve that lacks an interior peak to anchor scale. Applying an informative prior on $\ln(q)$ in the ISE logistic-selectivity scenario reduced SSB MRE from 14.6% to 9.2% and substantially tightened the distribution (SD went from 0.148 to 0.104), supporting catchability identifiability as the mechanism driving the degraded performance under logistic selectivity at intermediate effort.
+This effort-dependent pattern was traced to the confounding of survey catchability and SSB: across all scenarios, terminal-year SSB relative error was strongly correlated with $q$ relative error (Pearson correlation coefficient = 0.71–0.89). This trend is consistent with the known identifiability issue between $q$ and an asymptotic selectivity curve that lacks an interior peak to anchor scale. Applying an informative prior on $\ln(q)$ in the ISE logistic-selectivity scenario reduced SSB MRE from 14.6% to 9.2% and substantially tightened the distribution (SD went from 0.148 to 0.104), supporting catchability identifiability as the mechanism driving the degraded performance under logistic selectivity at intermediate effort.
 
 ```{r}
 #| label: tbl-selectivity-mre

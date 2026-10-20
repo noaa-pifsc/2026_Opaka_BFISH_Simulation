@@ -6,8 +6,8 @@ We tested the impact of varying sampling efforts of a fishery-independent survey
 
 ## Operating Model  
 
-The operating model was a single-species, single-sex, age-structured model conditioned on {{< var species.hawaiian.lower >}} life history parameters and historical fishery data from the Deep-7 complex. Historical data included 75 years of catch, CPUE, and size data from commercial and non-commercial fisheries, plus seven years of abundance indices and length composition data from the BFISH survey.
-The OM simulated population dynamics and generated abundance indices and compositional data for 100 years. Fishing mortality time series were generated based on historical patterns: low values at fishery inception, increasing through the 1970s and remaining high until the late 1990s, then declining in the early 2000s and stabilizing through the end of the time series (\Cref{fig-F-timeseries}). Annual fishing mortality values included stochastic variability (standard deviation of 0.002) to introduce realistic variation between iterations. Following the most recent Deep-7 benchmark stock assessment, we applied time-varying ratios for non-commercial catch: 1.94 from 1948-2003 and 1.09 for 2004-2049 [@syslo_benchmark_2024]. 
+The operating model was a single-species, single-sex, age-structured model conditioned on {{< var species.hawaiian.lower >}} life history parameters and historical fishery data from the Deep 7 complex. Historical data included 75 years of catch, CPUE, and size data from commercial and non-commercial fisheries, plus seven years of abundance indices and length composition data from the BFISH survey.
+The OM simulated population dynamics and generated abundance indices and compositional data for 100 years. Fishing mortality time series were generated based on historical patterns: low values at fishery inception, increasing through the 1970s and remaining high until the late 1990s, then declining in the early 2000s and stabilizing through the end of the time series (\Cref{fig-F-timeseries}). Annual fishing mortality values included stochastic variability (standard deviation of 0.002) to introduce realistic variation between iterations. Following the most recent Deep 7 benchmark stock assessment, we applied time-varying ratios for non-commercial catch: 1.94 from 1948-2003 and 1.09 for 2004-2049 [@syslo_benchmark_2024]. 
 
 ```{r}
 #| label: setup
@@ -31,6 +31,7 @@ source("../table_style.R")
 #| message: false
 #| label: fig-F-timeseries
 #| fig-cap: 100 unique time series of fishing mortality for the commercial (green lines) and non-commercial (orange lines) fisheries used for each iteration.
+#| fig-alt: "Line chart showing 100 simulated fishing-mortality time series from 1949 to 2050. Commercial fleet trajectories (green) are lower than non-commercial fleet trajectories (orange) throughout: both rise sharply in the 1970s, peak around 1980-2000, decline steeply through about 2010, then remain relatively stable through 2049."
 load("../constantF_mat.RData")
 
 comm <- F_comm_df %>% 
@@ -101,6 +102,8 @@ This additional stochastic noise ($\sigma = 0.15$) was intentionally set smaller
 #| fig-width: 7
 #| fig-height: 5.5
 #| fig-cap: Log recruitment deviations for one iteration over the simulation time period. Recruitment deviations in the historical period (1949-2023, grey shaded area and grey line) were the same for both recruitment conditions, but after 2023 they diverged. The normal (purple line) condition assumed recruitment pattens from the historical period continued into the future. The poor recruitment scenario (green line) assumed there was a 10 year period of declining recruitment, followed by a constant reduced recruitment (compared to the normal).  
+#| fig-alt: "Line chart of log recruitment deviations by year, with historical values shown as a gray jagged line centered around zero. An inset magnifies future trajectories after 2023: the purple trajectory generally remains positive, while the green trajectory drops below zero and stays lower."
+
  ts_df <- read.csv("../all_scens_ts.csv")
 
 library(ggmagnify)
@@ -173,6 +176,9 @@ Initial instantaneous fishing mortality was fixed at 0.012 for the commercial fi
 #| message: false
 #| label: fig-selex
 #| fig-cap: Selectivity functions used for the commercial (green line), non-commercial (orange line), and survey (purple line).
+#| fig-alt: "Commercial selectivity rises abruptly at about 35 cm and reaches its maximum near 42 cm. Non-commercial selectivity increases more gradually, reaching its maximum around 60 cm. Survey selectivity is highest from approximately 20 to 42 cm, then declines to a low, stable level for larger fish."
+
+
 rep <- r4ss::SS_output(dir = "../../models/02_Opaka_BFISH_simulation_EM", verbose = F, printstats=FALSE)
 
 rep$sizeselex %>% 
@@ -202,9 +208,10 @@ All scenarios had some combination of catch, abundance index, and length composi
 #| message: false
 #| warning: false
 #| fig-width: 7
-#| fig-height: 9
+#| fig-height: 8.5
 #| label: fig-data
-#| fig-cap: "Data generated from operating models and used in the estimation models with the survey (a) and the estimation models without the survey (b). The size of each point represents the relative amount of data available per year and fleet (i.e. large points represent years with more data). Green dots represent the commercial fishery, orange dots are for the non commercial fishery, and purple dots are for the BFISH survey."
+#| fig-cap: "Data generated by the operating model and used by estimation models with (a) and without (b) the survey. Point size indicates relative data amount; colors denote commercial (green), non-commercial (orange), and BFISH survey (purple) data."
+#| fig-alt: "Two-panel timeline of model data availability. Both panels include annual catches, commercial abundance indices, and length compositions; only the upper panel includes survey data beginning around 2020. Point sizes indicate relative data amounts."
 
 reps <- r4ss::SSgetoutput(
   dirvec = c("../../FRSonly_SQ_25_yrfwd/1/em",
@@ -236,7 +243,7 @@ The scenarios ranged from high survey effort (HSE) with 632 grids to extra low s
 
 ```{r}
 #| label: tbl-sas
-#| tbl-cap: "The observational error used to sample data from the OM for high survey effort (HSE), intermediate survey effort (ISE), low survey effort (LSE), extra low survey effort (XLSE), and no survey effort (NSE) for effort-based scenarios and selectivity-based scenarios. For each survey effort, the number of sampling grids (Grids) that effort would translate to, the resulting index of abundance CV, and effective sample size for length composition data are shown. All effort-based and selectivity-based scenarios were tested under both normal and poor recruitment conditions."
+#| tbl-cap: "The observational error used to sample data from the OM for high survey effort (HSE), intermediate survey effort (ISE), low survey effort (LSE), extra low survey effort (XLSE), and no survey effort (NSE) for effort-based scenarios and selectivity-based scenarios. For each survey effort, the number of sampling grids (Grids) that effort would translate to, the resulting index of abundance CV, and effective sample size (effN) for length composition data are shown. All effort-based and selectivity-based scenarios were tested under both normal and poor recruitment conditions."
  
 sas <- read.csv("../sas_report.csv")
 
@@ -268,7 +275,7 @@ format_pdf_table(
 
 ### Selectivity Scenarios  
 
-Independent of survey effort, we evaluated whether the shape of survey selectivity affects assessment performance. We simulated an alternative gear configuration, producing a logistic selectivity and applied it under poor recruitment conditions at three of the survey effort levels, HSE, ISE, and LSE (\Cref{tbl-sas}). CV and effective sample sizes for the selectivity scenarios were the same as their counterparts with dome-shaped selectivity (e.g. HSE-selectivity CV = HSE CV) (\Cref{tbl-sas}). XLSE was not included in the selectivity comparison because this effort level represents a worst case scenario in terms of survey effort and not a likely case. 
+In addition to survey effort, we evaluated whether the shape of survey selectivity affects assessment performance. We simulated an alternative gear configuration, producing a logistic selectivity and applied it under poor recruitment conditions at three of the survey effort levels, HSE, ISE, and LSE (\Cref{tbl-sas}). CV and effective sample sizes for the selectivity scenarios were the same as their counterparts with dome-shaped selectivity (e.g. HSE-selectivity CV = HSE CV) (\Cref{tbl-sas}). XLSE was not included in the selectivity comparison because this effort level represents a worst case scenario in terms of survey effort and not a likely case. 
 
 ### Catchability Prior Sensitivity Analysis  
 Preliminary results indicated that logistic selectivity introduces confounding between estimated survey catchability ($q$) and SSB at intermediate effort. To test whether this identifiability issue could be resolved with modest external information, we re-ran the ISE-selectivity poor recruitment scenario with an informative log-normal prior on $ln(q)$, centered on the OM value with SD = 0.1. 
@@ -286,4 +293,4 @@ $$
 MRE = median(\frac{EM - OM}{OM})
 $$
 
-where EM is the estimated value from the EM and OM is the true value from the OM, and precision was described by the variability in relative error across iterations. In particular, we report the bias and precision in the terminal year as this provides information on the long-term impacts of sampling effort on assessment and management abilities. We also evaluated the probability that the terminal year reference points (SSB/SSB~MSST~ and F/F~MSY~) were 10% greater or smaller than the true reference point values. We believe that managers should be cautious of estimates that fall outside 10% of the true value.    
+where EM is the estimated value from the EM and OM is the true value from the OM. Precision was described by the variability in relative error across iterations. In particular, we report the bias and precision in the terminal year as this provides information on the long-term impacts of sampling effort on assessment and management abilities. We also evaluated the probability that the terminal year reference points (SSB/SSB~MSST~ and F/F~MSY~) were 10% greater or smaller than the true reference point values. We believe that managers should be cautious of estimates that fall outside 10% of the true value.    
